@@ -1,0 +1,30 @@
+[gd_resource type="Theme" format=3 uid="uid://87inmwofe7s3"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hqkgv"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xrv66"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bpo87"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wao0y"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_jm7pk"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_g7b7a"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gyc6d"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6qx4q"]
+
+[resource]
+Button/styles/disabled = SubResource("StyleBoxFlat_hqkgv")
+Button/styles/focus = SubResource("StyleBoxFlat_xrv66")
+Button/styles/hover = SubResource("StyleBoxFlat_bpo87")
+Button/styles/normal = SubResource("StyleBoxFlat_wao0y")
+Button/styles/pressed = SubResource("StyleBoxFlat_jm7pk")
+Label/constants/line_spacing = 0
+Label/font_sizes/font_size = 8
+LineEdit/font_sizes/font_size = 8
+LineEdit/styles/focus = SubResource("StyleBoxFlat_g7b7a")
+LineEdit/styles/normal = SubResource("StyleBoxFlat_gyc6d")
+LineEdit/styles/read_only = SubResource("StyleBoxFlat_6qx4q")

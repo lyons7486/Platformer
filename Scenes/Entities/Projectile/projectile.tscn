@@ -1,0 +1,160 @@
+[gd_scene format=3 uid="uid://daotpqcho3tly"]
+
+[ext_resource type="Script" uid="uid://bqnuuemh0su8k" path="res://Scenes/Entities/Projectile/projectile.gd" id="1_yik15"]
+[ext_resource type="Texture2D" uid="uid://dvbb3gprqmayu" path="res://Assets/Sprites/Player/Equipment/projectile_rifle.png" id="2_wsxtw"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_qjv3w"]
+atlas = ExtResource("2_wsxtw")
+region = Rect2(0, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fcpea"]
+atlas = ExtResource("2_wsxtw")
+region = Rect2(64, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_3l383"]
+atlas = ExtResource("2_wsxtw")
+region = Rect2(80, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_62jo3"]
+atlas = ExtResource("2_wsxtw")
+region = Rect2(96, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_4vn3i"]
+atlas = ExtResource("2_wsxtw")
+region = Rect2(112, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_orc7j"]
+atlas = ExtResource("2_wsxtw")
+region = Rect2(128, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_yv5vr"]
+atlas = ExtResource("2_wsxtw")
+region = Rect2(144, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_qrfyu"]
+atlas = ExtResource("2_wsxtw")
+region = Rect2(0, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bc13l"]
+atlas = ExtResource("2_wsxtw")
+region = Rect2(16, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ogag4"]
+atlas = ExtResource("2_wsxtw")
+region = Rect2(32, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ritf3"]
+atlas = ExtResource("2_wsxtw")
+region = Rect2(48, 0, 16, 16)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_hqxv8"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_qjv3w")
+}],
+"loop": 0,
+"name": &"default",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fcpea")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_3l383")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_62jo3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_4vn3i")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_orc7j")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_yv5vr")
+}],
+"loop": 0,
+"name": &"hit",
+"speed": 24.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_qrfyu")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_bc13l")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ogag4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ritf3")
+}],
+"loop": 1,
+"name": &"time_out",
+"speed": 12.0
+}]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_oxmic"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_yh63k"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_jrsdr"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_yik15"]
+size = Vector2(3, 1)
+
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_qjv3w"]
+properties/0/path = NodePath(".:network_position")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+properties/1/path = NodePath(".:network_direction")
+properties/1/spawn = true
+properties/1/replication_mode = 2
+properties/2/path = NodePath(".:network_projectile_type")
+properties/2/spawn = true
+properties/2/replication_mode = 2
+
+[node name="Projectile" type="Area2D" unique_id=235986819]
+collision_layer = 2
+script = ExtResource("1_yik15")
+
+[node name="Visuals" type="Node2D" parent="." unique_id=777272662]
+
+[node name="BulletSprite" type="AnimatedSprite2D" parent="Visuals" unique_id=2012825682]
+sprite_frames = SubResource("SpriteFrames_hqxv8")
+
+[node name="PlasmaSprite" type="AnimatedSprite2D" parent="Visuals" unique_id=1750700445]
+sprite_frames = SubResource("SpriteFrames_oxmic")
+
+[node name="RocketSprite" type="AnimatedSprite2D" parent="Visuals" unique_id=1399528299]
+sprite_frames = SubResource("SpriteFrames_yh63k")
+
+[node name="LaserSprite" type="AnimatedSprite2D" parent="Visuals" unique_id=58371996]
+sprite_frames = SubResource("SpriteFrames_jrsdr")
+
+[node name="CollisionShapes" type="Area2D" parent="." unique_id=595683575]
+
+[node name="BulletShape" type="CollisionShape2D" parent="CollisionShapes" unique_id=602572698]
+position = Vector2(-0.5, -0.5)
+shape = SubResource("RectangleShape2D_yik15")
+disabled = true
+
+[node name="PlasmaShape" type="CollisionShape2D" parent="CollisionShapes" unique_id=1971166193]
+disabled = true
+
+[node name="RocketShape" type="CollisionShape2D" parent="CollisionShapes" unique_id=667197852]
+disabled = true
+
+[node name="LaserShape" type="CollisionShape2D" parent="CollisionShapes" unique_id=68430201]
+disabled = true
+
+[node name="LifetimeTimer" type="Timer" parent="." unique_id=1173489939]
+wait_time = 3.0
+one_shot = true
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=686018083]
+replication_config = SubResource("SceneReplicationConfig_qjv3w")

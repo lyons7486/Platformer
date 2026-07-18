@@ -1,0 +1,23 @@
+[gd_scene format=3 uid="uid://dotloiam0dmip"]
+
+[ext_resource type="Script" uid="uid://05xsjmis0vhp" path="res://Scenes/System/scene_handler.gd" id="1_spker"]
+[ext_resource type="PackedScene" uid="uid://bbdwgpanf2es3" path="res://Scenes/UI/player_status.tscn" id="2_5syei"]
+
+[node name="SceneHandler" type="Node" unique_id=260082781]
+script = ExtResource("1_spker")
+
+[node name="Level" type="Node2D" parent="." unique_id=1886407342]
+
+[node name="Players" type="Node2D" parent="." unique_id=1076341914]
+
+[node name="Projectiles" type="Node2D" parent="." unique_id=1957994269]
+
+[node name="UI" type="CanvasLayer" parent="." unique_id=1755674461]
+
+[node name="PlayerStatus" parent="UI" unique_id=1937145610 instance=ExtResource("2_5syei")]
+
+[node name="PlayerSpawner" type="MultiplayerSpawner" parent="." unique_id=405104254]
+spawn_path = NodePath("../Players")
+
+[node name="ProjectileSpawner" type="MultiplayerSpawner" parent="." unique_id=1214721059]
+spawn_path = NodePath("../Projectiles")

@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://dbhuwwiaquj"]
+
+[ext_resource type="Texture2D" uid="uid://crneoo45oj8c4" path="res://Assets/UI/Bar_Pip.png" id="1_seo72"]
+
+[node name="Pip" type="TextureRect" unique_id=1697678148]
+texture = ExtResource("1_seo72")

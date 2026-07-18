@@ -1,0 +1,24 @@
+[gd_scene format=3 uid="uid://bbdwgpanf2es3"]
+
+[ext_resource type="Script" uid="uid://bvx21abpvwehf" path="res://Scenes/UI/player_status.gd" id="1_6g872"]
+[ext_resource type="PackedScene" uid="uid://dbhuwwiaquj" path="res://Scenes/UI/pip.tscn" id="1_ctmdp"]
+
+[node name="PlayerStatus" type="MarginContainer" unique_id=1937145610]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_6g872")
+
+[node name="HBox" type="HBoxContainer" parent="." unique_id=520679075]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 0
+
+[node name="Health" type="Label" parent="HBox" unique_id=255615131]
+layout_mode = 2
+text = "10"
+
+[node name="Pip" parent="HBox" unique_id=1697678148 instance=ExtResource("1_ctmdp")]
+layout_mode = 2

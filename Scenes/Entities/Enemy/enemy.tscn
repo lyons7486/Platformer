@@ -1,0 +1,120 @@
+[gd_scene format=3 uid="uid://c1ypmuy1oemxw"]
+
+[ext_resource type="Script" uid="uid://bit8ohfo62q3l" path="res://Scenes/Entities/Enemy/enemy.gd" id="1_1bxle"]
+[ext_resource type="Texture2D" uid="uid://cbbb1u6f1xubk" path="res://Assets/Sprites/enemy_walker.png" id="2_yd8tt"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_3y6us"]
+atlas = ExtResource("2_yd8tt")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_jdlpf"]
+atlas = ExtResource("2_yd8tt")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_2pj5k"]
+atlas = ExtResource("2_yd8tt")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bce5a"]
+atlas = ExtResource("2_yd8tt")
+region = Rect2(64, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_k26qu"]
+atlas = ExtResource("2_yd8tt")
+region = Rect2(96, 0, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_uqwq4"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_3y6us")
+}],
+"loop": 1,
+"name": &"Idle",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_jdlpf")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_2pj5k")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_bce5a")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_k26qu")
+}],
+"loop": 1,
+"name": &"Walk",
+"speed": 6.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_b126r"]
+size = Vector2(6, 14)
+
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_1opxp"]
+properties/0/path = NodePath(".:network_position")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+properties/1/path = NodePath(".:network_velocity")
+properties/1/spawn = true
+properties/1/replication_mode = 1
+properties/2/path = NodePath(".:network_direction")
+properties/2/spawn = true
+properties/2/replication_mode = 1
+properties/3/path = NodePath(".:network_animation")
+properties/3/spawn = true
+properties/3/replication_mode = 2
+properties/4/path = NodePath(".:network_flip_h")
+properties/4/spawn = true
+properties/4/replication_mode = 2
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_hqxv8"]
+radius = 6.0
+
+[node name="Enemy" type="CharacterBody2D" unique_id=11946664]
+collision_layer = 0
+collision_mask = 9
+script = ExtResource("1_1bxle")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=857154996]
+sprite_frames = SubResource("SpriteFrames_uqwq4")
+animation = &"Walk"
+frame_progress = 0.610869
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1442734663]
+position = Vector2(0, 13)
+rotation = 1.5708
+shape = SubResource("RectangleShape2D_b126r")
+
+[node name="GroundCheckLeft" type="RayCast2D" parent="." unique_id=543722044]
+position = Vector2(-7, 16)
+target_position = Vector2(0, 10)
+
+[node name="GroundCheckRight" type="RayCast2D" parent="." unique_id=3828184]
+position = Vector2(7, 16)
+target_position = Vector2(0, 10)
+
+[node name="WallCheckLeft" type="RayCast2D" parent="." unique_id=29314957]
+position = Vector2(-7, 12)
+target_position = Vector2(-6, 0)
+
+[node name="WallCheckRight" type="RayCast2D" parent="." unique_id=874626251]
+position = Vector2(7, 12)
+target_position = Vector2(6, 0)
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=1909447575]
+replication_config = SubResource("SceneReplicationConfig_1opxp")
+
+[node name="Attacks" type="Marker2D" parent="." unique_id=604122885]
+position = Vector2(0, 11)
+
+[node name="Bite" type="Node2D" parent="Attacks" unique_id=448155555]
+
+[node name="Area2D" type="Area2D" parent="Attacks/Bite" unique_id=1136298741]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Attacks/Bite/Area2D" unique_id=1817613154]
+position = Vector2(8, 0)
+shape = SubResource("CircleShape2D_hqxv8")

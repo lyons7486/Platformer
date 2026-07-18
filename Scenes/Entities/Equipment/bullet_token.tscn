@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://i2v06isetfka"]
+
+[ext_resource type="Texture2D" uid="uid://bhdsv44j5m2te" path="res://Assets/UI/Ammo_Bullet.png" id="1_1bjcc"]
+
+[node name="BulletToken" type="TextureRect" unique_id=1038037959]
+texture = ExtResource("1_1bjcc")

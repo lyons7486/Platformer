@@ -1,0 +1,79 @@
+[gd_scene format=3 uid="uid://da3ya3yd10f8e"]
+
+[ext_resource type="PackedScene" uid="uid://het7ja6s1r3n" path="res://Scenes/UI/default_box.tscn" id="1_cyn2r"]
+[ext_resource type="Script" uid="uid://dgkhe03n3jw4s" path="res://Scenes/UI/main_menu.gd" id="1_p7ljc"]
+
+[node name="MainMenu" type="Control" unique_id=1652933672]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_p7ljc")
+
+[node name="TextureRect" type="ColorRect" parent="." unique_id=818256401]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.119274236, 0.12872627, 0.17413178, 1)
+
+[node name="Center" type="CenterContainer" parent="." unique_id=882075753]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="DefaultBox" parent="Center" unique_id=1787326871 instance=ExtResource("1_cyn2r")]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="Center/DefaultBox/Margin" parent_id_path=PackedInt32Array(1787326871, 1819682902) index="0" unique_id=2147173287]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Center/DefaultBox/Margin/VBox" unique_id=1482154923]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "PLATFORMER"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="IPAddress" type="LineEdit" parent="Center/DefaultBox/Margin/VBox" unique_id=1088807995]
+unique_name_in_owner = true
+layout_mode = 2
+text = "127.0.0.1:7000"
+placeholder_text = "IP Address : Port"
+alignment = 1
+
+[node name="HostButton" type="Button" parent="Center/DefaultBox/Margin/VBox" unique_id=373464499]
+unique_name_in_owner = true
+layout_mode = 2
+text = "HOST"
+
+[node name="JoinButton" type="Button" parent="Center/DefaultBox/Margin/VBox" unique_id=719402249]
+unique_name_in_owner = true
+layout_mode = 2
+text = "JOIN"
+
+[node name="OptionsButton" type="Button" parent="Center/DefaultBox/Margin/VBox" unique_id=265196940]
+unique_name_in_owner = true
+layout_mode = 2
+text = "OPTIONS"
+
+[node name="ExitButton" type="Button" parent="Center/DefaultBox/Margin/VBox" unique_id=851049656]
+unique_name_in_owner = true
+layout_mode = 2
+text = "EXIT"
+
+[node name="ConnectionStatus" type="Label" parent="Center/DefaultBox/Margin/VBox" unique_id=1482751485]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 20)
+layout_mode = 2
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[editable path="Center/DefaultBox"]

@@ -1,0 +1,147 @@
+[gd_scene format=3 uid="uid://bi3jlnyhwdn1i"]
+
+[ext_resource type="Script" uid="uid://mxiw01c2orrw" path="res://Scenes/Objects/waypoint.gd" id="1_kmxkh"]
+[ext_resource type="Texture2D" uid="uid://52rakd2fgnpd" path="res://Assets/Sprites/flag_blue.png" id="1_sy2hl"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_5govh"]
+atlas = ExtResource("1_sy2hl")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_8xevw"]
+atlas = ExtResource("1_sy2hl")
+region = Rect2(64, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_de612"]
+atlas = ExtResource("1_sy2hl")
+region = Rect2(96, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_g5jq1"]
+atlas = ExtResource("1_sy2hl")
+region = Rect2(128, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ckhjl"]
+atlas = ExtResource("1_sy2hl")
+region = Rect2(160, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_gvo53"]
+atlas = ExtResource("1_sy2hl")
+region = Rect2(192, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_cjpsd"]
+atlas = ExtResource("1_sy2hl")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bo5db"]
+atlas = ExtResource("1_sy2hl")
+region = Rect2(224, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_3jn5e"]
+atlas = ExtResource("1_sy2hl")
+region = Rect2(256, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_htner"]
+atlas = ExtResource("1_sy2hl")
+region = Rect2(288, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_glrcc"]
+atlas = ExtResource("1_sy2hl")
+region = Rect2(320, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wlll5"]
+atlas = ExtResource("1_sy2hl")
+region = Rect2(352, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_unsmh"]
+atlas = ExtResource("1_sy2hl")
+region = Rect2(384, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_522he"]
+atlas = ExtResource("1_sy2hl")
+region = Rect2(416, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_45iwj"]
+atlas = ExtResource("1_sy2hl")
+region = Rect2(448, 0, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_xf1gy"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_5govh")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_8xevw")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_de612")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_g5jq1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ckhjl")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_gvo53")
+}],
+"loop": 0,
+"name": &"Hoist",
+"speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_cjpsd")
+}],
+"loop": 1,
+"name": &"Off",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_bo5db")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_3jn5e")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_htner")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_glrcc")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wlll5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_unsmh")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_522he")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_45iwj")
+}],
+"loop": 1,
+"name": &"On",
+"speed": 8.0
+}]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_54gd2"]
+radius = 5.0
+height = 28.0
+
+[node name="Waypoint" type="Area2D" unique_id=1496971992]
+collision_layer = 0
+collision_mask = 16
+script = ExtResource("1_kmxkh")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=24418113]
+z_index = 2
+sprite_frames = SubResource("SpriteFrames_xf1gy")
+animation = &"Off"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=857068224]
+position = Vector2(0, 2)
+shape = SubResource("CapsuleShape2D_54gd2")
+
+[connection signal="body_entered" from="." to="." method="waypoint_set"]

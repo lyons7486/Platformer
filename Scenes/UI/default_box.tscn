@@ -1,0 +1,20 @@
+[gd_scene format=3 uid="uid://het7ja6s1r3n"]
+
+[ext_resource type="Texture2D" uid="uid://dc101oskvdcbt" path="res://Assets/UI/MenuBox_Default.png" id="1_88p4w"]
+
+[node name="DefaultBox" type="MarginContainer" unique_id=1787326871]
+
+[node name="BoxArt" type="NinePatchRect" parent="." unique_id=640734061]
+layout_mode = 2
+texture = ExtResource("1_88p4w")
+patch_margin_left = 8
+patch_margin_top = 8
+patch_margin_right = 8
+patch_margin_bottom = 8
+
+[node name="Margin" type="MarginContainer" parent="." unique_id=1819682902]
+layout_mode = 2
+theme_override_constants/margin_left = 5
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 5
