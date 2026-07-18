@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b427g8qap6r0r"
-path="res://.godot/imported/Backpack_Default.png-60027069347d3302e94ff2988d576aa4.ctex"
+uid="uid://b43tdhutcwc8l"
+path="res://.godot/imported/Coin_Gold_collect.png-4e14ee1c4aedb207d2612912290286fc.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Assets/Sprites/Player/Backpack_Default.png"
-dest_files=["res://.godot/imported/Backpack_Default.png-60027069347d3302e94ff2988d576aa4.ctex"]
+source_file="res://Assets/Textures/Object/Coin_Gold_collect.png"
+dest_files=["res://.godot/imported/Coin_Gold_collect.png-4e14ee1c4aedb207d2612912290286fc.ctex"]
 
 [params]
 

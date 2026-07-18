@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bd28wqaxglore"
-path="res://.godot/imported/Rifle_Flash.png-268d8605cb1a029c25d545aeb685982b.ctex"
+uid="uid://cucb4nwu1rac5"
+path="res://.godot/imported/endPoint_back.png-da2068375d7ccb95d3f8295db701f03f.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Assets/Sprites/Player/Equipment/Rifle_Flash.png"
-dest_files=["res://.godot/imported/Rifle_Flash.png-268d8605cb1a029c25d545aeb685982b.ctex"]
+source_file="res://Assets/Textures/Object/endPoint_back.png"
+dest_files=["res://.godot/imported/endPoint_back.png-da2068375d7ccb95d3f8295db701f03f.ctex"]
 
 [params]
 

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dvbb3gprqmayu"
-path="res://.godot/imported/projectile_rifle.png-9ff3b2fe3fa72d78305db18a8cc1e004.ctex"
+uid="uid://52rakd2fgnpd"
+path="res://.godot/imported/flag_blue.png-344906c2d423e856dec9129272fa9cac.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Assets/Sprites/Player/Equipment/projectile_rifle.png"
-dest_files=["res://.godot/imported/projectile_rifle.png-9ff3b2fe3fa72d78305db18a8cc1e004.ctex"]
+source_file="res://Assets/Textures/Object/flag_blue.png"
+dest_files=["res://.godot/imported/flag_blue.png-344906c2d423e856dec9129272fa9cac.ctex"]
 
 [params]
 

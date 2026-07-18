@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://7wj8h85kwojw"]
 
 [ext_resource type="Script" uid="uid://bvs5cj6redakd" path="res://Scenes/Entities/Player/player.gd" id="1_er4f5"]
-[ext_resource type="Texture2D" uid="uid://by2phennquuml" path="res://Assets/Sprites/Player/Player_Default.png" id="2_nuwc3"]
+[ext_resource type="Texture2D" uid="uid://by2phennquuml" path="res://Assets/Textures/Player/Player_Default.png" id="2_nuwc3"]
 [ext_resource type="PackedScene" uid="uid://b7m0xb1vhvu7r" path="res://Scenes/Entities/Equipment/rifle.tscn" id="3_rx582"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_ykdah"]

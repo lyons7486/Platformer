@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://ifskwee8youc"
-path="res://.godot/imported/Weapon_Rifle.png-c627fc511df3f8d70ebfa39077e682ed.ctex"
+path="res://.godot/imported/Weapon_Rifle.png-e7e1cbda2b951c6ec7d876fb7a448ff1.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Assets/Sprites/Player/Weapon_Rifle.png"
-dest_files=["res://.godot/imported/Weapon_Rifle.png-c627fc511df3f8d70ebfa39077e682ed.ctex"]
+source_file="res://Assets/Textures/Equipment/Weapon_Rifle.png"
+dest_files=["res://.godot/imported/Weapon_Rifle.png-e7e1cbda2b951c6ec7d876fb7a448ff1.ctex"]
 
 [params]
 

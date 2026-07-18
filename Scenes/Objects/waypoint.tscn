@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://bi3jlnyhwdn1i"]
 
 [ext_resource type="Script" uid="uid://mxiw01c2orrw" path="res://Scenes/Objects/waypoint.gd" id="1_kmxkh"]
-[ext_resource type="Texture2D" uid="uid://52rakd2fgnpd" path="res://Assets/Sprites/flag_blue.png" id="1_sy2hl"]
+[ext_resource type="Texture2D" uid="uid://52rakd2fgnpd" path="res://Assets/Textures/Object/flag_blue.png" id="1_sy2hl"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_5govh"]
 atlas = ExtResource("1_sy2hl")

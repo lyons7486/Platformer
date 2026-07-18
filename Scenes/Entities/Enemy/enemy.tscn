@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://c1ypmuy1oemxw"]
 
 [ext_resource type="Script" uid="uid://bit8ohfo62q3l" path="res://Scenes/Entities/Enemy/enemy.gd" id="1_1bxle"]
-[ext_resource type="Texture2D" uid="uid://cbbb1u6f1xubk" path="res://Assets/Sprites/enemy_walker.png" id="2_yd8tt"]
+[ext_resource type="Texture2D" uid="uid://cbbb1u6f1xubk" path="res://Assets/Textures/Enemy/enemy_walker.png" id="2_yd8tt"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_3y6us"]
 atlas = ExtResource("2_yd8tt")
