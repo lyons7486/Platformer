@@ -2,6 +2,8 @@
 
 [ext_resource type="Script" uid="uid://bit8ohfo62q3l" path="res://Scenes/Entities/Enemy/enemy.gd" id="1_1bxle"]
 [ext_resource type="Texture2D" uid="uid://cbbb1u6f1xubk" path="res://Assets/Textures/Enemy/enemy_walker.png" id="2_yd8tt"]
+[ext_resource type="Script" uid="uid://ddifhs2ic80ns" path="res://Scripts/Components/health_component.gd" id="3_yd8tt"]
+[ext_resource type="PackedScene" uid="uid://hdmm5b2grmku" path="res://Scenes/Components/hurtbox.tscn" id="4_1opxp"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_3y6us"]
 atlas = ExtResource("2_yd8tt")
@@ -74,6 +76,9 @@ properties/4/replication_mode = 2
 [sub_resource type="CircleShape2D" id="CircleShape2D_hqxv8"]
 radius = 6.0
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1opxp"]
+size = Vector2(14, 11)
+
 [node name="Enemy" type="CharacterBody2D" unique_id=11946664]
 collision_layer = 0
 collision_mask = 9
@@ -118,3 +123,17 @@ position = Vector2(0, 11)
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Attacks/Bite/Area2D" unique_id=1817613154]
 position = Vector2(8, 0)
 shape = SubResource("CircleShape2D_hqxv8")
+
+[node name="HealthComponent" type="Node" parent="." unique_id=1209269942]
+script = ExtResource("3_yd8tt")
+maximum_health = 30.0
+starting_health = 30.0
+
+[node name="Hurtbox" parent="." unique_id=1428053106 instance=ExtResource("4_1opxp")]
+use_invincibility_frames = false
+
+[node name="CollisionShape2D" parent="Hurtbox" index="0" unique_id=1226976083]
+position = Vector2(0, 10.5)
+shape = SubResource("RectangleShape2D_1opxp")
+
+[editable path="Hurtbox"]

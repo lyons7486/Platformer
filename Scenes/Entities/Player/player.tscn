@@ -3,6 +3,8 @@
 [ext_resource type="Script" uid="uid://bvs5cj6redakd" path="res://Scenes/Entities/Player/player.gd" id="1_er4f5"]
 [ext_resource type="Texture2D" uid="uid://by2phennquuml" path="res://Assets/Textures/Player/Player_Default.png" id="2_nuwc3"]
 [ext_resource type="PackedScene" uid="uid://b7m0xb1vhvu7r" path="res://Scenes/Entities/Equipment/rifle.tscn" id="3_rx582"]
+[ext_resource type="PackedScene" uid="uid://hdmm5b2grmku" path="res://Scenes/Components/hurtbox.tscn" id="4_22fhq"]
+[ext_resource type="Script" uid="uid://ddifhs2ic80ns" path="res://Scripts/Components/health_component.gd" id="4_fcpig"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_ykdah"]
 atlas = ExtResource("2_nuwc3")
@@ -96,7 +98,7 @@ animations = [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_bcoip")
 }],
-"loop": 1,
+"loop": 0,
 "name": &"Hit",
 "speed": 6.0
 }, {
@@ -267,13 +269,19 @@ properties/3/path = NodePath(".:network_flip_h")
 properties/3/spawn = true
 properties/3/replication_mode = 2
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_fcpig"]
+size = Vector2(8, 15)
+
 [node name="Player" type="CharacterBody2D" unique_id=735545274]
 collision_layer = 20
 script = ExtResource("1_er4f5")
+received_knockback_multiplier = 1.0
 
 [node name="PlayerSprite" type="AnimatedSprite2D" parent="." unique_id=350306726]
 sprite_frames = SubResource("SpriteFrames_d2wks")
-animation = &"Idle"
+animation = &"Hit"
+frame = 2
+frame_progress = 1.0
 offset = Vector2(0, -16)
 
 [node name="Equips" type="Marker2D" parent="." unique_id=636882154]
@@ -293,9 +301,26 @@ one_shot = true
 [node name="ControlTimer" type="Timer" parent="." unique_id=652389892]
 one_shot = true
 
+[node name="DeathKnockbackTimer" type="Timer" parent="." unique_id=455331406]
+one_shot = true
+
+[node name="DeathTimer" type="Timer" parent="." unique_id=1389718467]
+one_shot = true
+
 [node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=498295139]
 replication_config = SubResource("SceneReplicationConfig_83ssp")
 
 [node name="PlayerCamera" type="Camera2D" parent="." unique_id=1571622571]
 enabled = false
 position_smoothing_enabled = true
+
+[node name="HealthComponent" type="Node" parent="." unique_id=1596130450]
+script = ExtResource("4_fcpig")
+
+[node name="Hurtbox" parent="." unique_id=1428053106 instance=ExtResource("4_22fhq")]
+
+[node name="CollisionShape2D" parent="Hurtbox" index="0" unique_id=1226976083]
+position = Vector2(0, -7.5)
+shape = SubResource("RectangleShape2D_fcpig")
+
+[editable path="Hurtbox"]

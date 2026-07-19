@@ -35,6 +35,8 @@ enum ProjectileTypes {
 	$Visuals/LaserSprite
 )
 
+@onready var hitbox: Hitbox = $CollisionShapes
+
 @onready var bullet_shape: CollisionShape2D = (
 	$CollisionShapes/BulletShape
 )
@@ -63,6 +65,12 @@ var projectile_type: ProjectileTypes = ProjectileTypes.BULLET
 var move_speed: float = 350.0
 var damage: float = 10.0
 var lifetime: float = 3.0
+
+var damage_type: DamageTypes.Type = (
+	DamageTypes.Type.PHYSICAL
+)
+
+var knockback_strength: float = 100.0
 
 var direction: Vector2 = Vector2.RIGHT
 var shooter_peer_id: int = 1
@@ -130,6 +138,7 @@ func apply_projectile_type() -> void:
 		ProjectileTypes.LASER:
 			setup_laser()
 	
+	configure_hitbox()
 	update_visual_direction()
 
 
@@ -158,6 +167,9 @@ func setup_bullet() -> void:
 	damage = 10.0
 	lifetime = 3.0
 	
+	damage_type = DamageTypes.Type.PHYSICAL
+	knockback_strength = 100.0
+	
 	bullet_sprite.visible = true
 	bullet_shape.set_deferred("disabled", false)
 	
@@ -173,6 +185,9 @@ func setup_plasma() -> void:
 	move_speed = 250.0
 	damage = 20.0
 	lifetime = 4.0
+	
+	damage_type = DamageTypes.Type.ENERGY
+	knockback_strength = 140.0
 	
 	plasma_sprite.visible = true
 	plasma_shape.set_deferred("disabled", false)
@@ -190,6 +205,9 @@ func setup_rocket() -> void:
 	damage = 40.0
 	lifetime = 5.0
 	
+	damage_type = DamageTypes.Type.EXPLOSIVE
+	knockback_strength = 240.0
+	
 	rocket_sprite.visible = true
 	rocket_shape.set_deferred("disabled", false)
 	
@@ -205,6 +223,9 @@ func setup_laser() -> void:
 	move_speed = 600.0
 	damage = 8.0
 	lifetime = 1.5
+	
+	damage_type = DamageTypes.Type.ENERGY
+	knockback_strength = 60.0
 	
 	laser_sprite.visible = true
 	laser_shape.set_deferred("disabled", false)
@@ -232,6 +253,67 @@ func play_sprite_animation(
 	
 	if sprite.sprite_frames.has_animation(&"Default"):
 		sprite.play(&"Default")
+		return
+	
+	if sprite.sprite_frames.has_animation(&"default"):
+		sprite.play(&"default")
+
+
+############################
+##         HITBOX         ##
+############################
+
+#### CONFIGURE HITBOX ####
+
+func configure_hitbox() -> void:
+	hitbox.damage_amount = damage
+	hitbox.damage_type = damage_type
+	
+	hitbox.knockback_strength = knockback_strength
+	hitbox.use_target_direction_for_knockback = true
+	
+	hitbox.one_hit_per_activation = true
+	hitbox.deactivate_after_successful_hit = true
+	hitbox.allow_self_damage = false
+	
+	hitbox.set_source(
+		self,
+		shooter_peer_id
+	)
+	
+	setup_hitbox_collision()
+
+
+#### SETUP HITBOX COLLISION ####
+
+func setup_hitbox_collision() -> void:
+	hitbox.collision_layer = 0
+	hitbox.collision_mask = 0
+	
+	hitbox.set_collision_layer_value(
+		8,
+		true
+	)
+	
+	hitbox.set_collision_mask_value(
+		7,
+		true
+	)
+
+
+#### PROJECTILE HIT LANDED ####
+
+func projectile_hit_landed(
+	_hurtbox: Hurtbox,
+	_damage_data: DamageData,
+	_damage_received: float
+) -> void:
+	if not multiplayer.is_server():
+		return
+	
+	hitbox.deactivate()
+	
+	call_deferred("queue_free")
 
 
 ############################
@@ -249,8 +331,12 @@ func _ready() -> void:
 	
 	apply_projectile_type()
 	
-	if multiplayer.is_server():
-		lifetime_timer.start(lifetime)
+	if not multiplayer.is_server():
+		hitbox.deactivate()
+		return
+	
+	hitbox.activate()
+	lifetime_timer.start(lifetime)
 
 
 #### CONNECT SIGNALS ####
@@ -261,6 +347,13 @@ func connect_signals() -> void:
 	):
 		lifetime_timer.timeout.connect(
 			lifetime_finished
+		)
+	
+	if not hitbox.hit_landed.is_connected(
+		projectile_hit_landed
+	):
+		hitbox.hit_landed.connect(
+			projectile_hit_landed
 		)
 
 
@@ -291,6 +384,8 @@ func lifetime_finished() -> void:
 	if not multiplayer.is_server():
 		return
 	
+	hitbox.deactivate()
+	
 	queue_free()
 
 
@@ -320,6 +415,7 @@ func apply_remote_projectile_type() -> void:
 	)
 	
 	apply_projectile_type()
+	hitbox.deactivate()
 
 
 #### UPDATE REMOTE POSITION ####

@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://bqnuuemh0su8k" path="res://Scenes/Entities/Projectile/projectile.gd" id="1_yik15"]
 [ext_resource type="Texture2D" uid="uid://dvbb3gprqmayu" path="res://Assets/Textures/Equipment/projectile_rifle.png" id="2_wsxtw"]
+[ext_resource type="Script" uid="uid://p4udp7yees1e" path="res://Scripts/Combat/hitbox.gd" id="3_wsxtw"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_qjv3w"]
 atlas = ExtResource("2_wsxtw")
@@ -137,6 +138,9 @@ sprite_frames = SubResource("SpriteFrames_yh63k")
 sprite_frames = SubResource("SpriteFrames_jrsdr")
 
 [node name="CollisionShapes" type="Area2D" parent="." unique_id=595683575]
+script = ExtResource("3_wsxtw")
+active_on_ready = false
+deactivate_after_successful_hit = true
 
 [node name="BulletShape" type="CollisionShape2D" parent="CollisionShapes" unique_id=602572698]
 position = Vector2(-0.5, -0.5)

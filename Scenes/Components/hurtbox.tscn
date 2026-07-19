@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://hdmm5b2grmku"]
+
+[ext_resource type="Script" uid="uid://dkaufng6xdgfb" path="res://Scripts/Combat/hurtbox.gd" id="1_8qofe"]
+
+[node name="Hurtbox" type="Area2D" unique_id=1428053106]
+collision_layer = 0
+collision_mask = 0
+monitoring = false
+script = ExtResource("1_8qofe")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1226976083]
+
+[node name="InvincibilityTimer" type="Timer" parent="." unique_id=620694386]
+one_shot = true

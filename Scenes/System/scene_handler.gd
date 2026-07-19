@@ -11,6 +11,10 @@ const MAIN_MENU_SCENE: PackedScene = preload(
 	"res://Scenes/UI/main_menu.tscn"
 )
 
+const PLAYER_STATUS_SCENE: PackedScene = preload(
+	"res://Scenes/UI/player_status.tscn"
+)
+
 const DEBUG_LEVEL_PATH: String = (
 	"res://Scenes/Levels/debug_level.tscn"
 )
@@ -22,7 +26,6 @@ const PLAYER_SCENE: PackedScene = preload(
 const RIFLE_PROJECTILE_SCENE: PackedScene = preload(
 	"res://Scenes/Entities/Projectile/projectile.tscn"
 )
-
 
 ############################
 ##      LEVEL STATE       ##
@@ -320,7 +323,9 @@ func load_level_local(level_path: String) -> void:
 	
 	level_container.add_child(level)
 	current_level_path = level_path
-	
+
+	load_player_status()
+
 	if multiplayer.is_server():
 		spawn_connected_players()
 
@@ -329,6 +334,22 @@ func load_level_local(level_path: String) -> void:
 
 func open_options() -> void:
 	print("Options requested")
+
+
+############################
+##       GAME HUD         ##
+############################
+
+#### LOAD PLAYER STATUS ####
+
+func load_player_status() -> void:
+	var player_status: PlayerStatus = (
+		PLAYER_STATUS_SCENE.instantiate()
+	)
+	
+	ui_container.add_child(
+		player_status
+	)
 
 
 ############################

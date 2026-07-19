@@ -86,7 +86,7 @@ player_reload={
 2d_physics/layer_7="Enemy Hurtbox"
 2d_physics/layer_8="Player Hitbox"
 2d_physics/layer_9="Enemy Hitbox"
-2d_physics/layer_10="Hazard"
+2d_physics/layer_10="Hazard Hitbox"
 
 [rendering]
 
