@@ -3,7 +3,6 @@
 [ext_resource type="Script" uid="uid://dvd751kdnnt0f" path="res://Scenes/Levels/debug_level.gd" id="1_58nmt"]
 [ext_resource type="Texture2D" uid="uid://be3o1b4gkn1m8" path="res://Assets/Background/darkgrey_level_background.png" id="3_1wpcp"]
 [ext_resource type="Texture2D" uid="uid://di2qu42a8tln" path="res://Assets/Tilemaps/Tileset_Spacebase.png" id="3_qrb3x"]
-[ext_resource type="Script" uid="uid://dk2w2dt48yet3" path="res://Scripts/Debug/damage_test_area.gd" id="4_q57fr"]
 [ext_resource type="PackedScene" uid="uid://dip8lid7cifuy" path="res://Scenes/Objects/spawn_point.tscn" id="5_dt1sm"]
 [ext_resource type="PackedScene" uid="uid://bi3jlnyhwdn1i" path="res://Scenes/Objects/waypoint.tscn" id="5_mx4gj"]
 [ext_resource type="PackedScene" uid="uid://bxpe53jaar1m1" path="res://Scenes/Objects/end_point.tscn" id="6_7tnoh"]
@@ -403,8 +402,6 @@ sources/0 = SubResource("TileSetAtlasSource_62owa")
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ujbgl"]
 size = Vector2(4339, 50)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_oxmic"]
-
 [node name="DebugLevel" type="Node2D" unique_id=2050790629]
 script = ExtResource("1_58nmt")
 
@@ -432,15 +429,6 @@ position = Vector2(0.5, 0)
 shape = SubResource("RectangleShape2D_ujbgl")
 
 [node name="Objects" type="Node2D" parent="." unique_id=490351011]
-
-[node name="DamageTestArea" type="Area2D" parent="Objects" unique_id=2144229482]
-position = Vector2(-523, 390)
-collision_layer = 0
-collision_mask = 4
-script = ExtResource("4_q57fr")
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Objects/DamageTestArea" unique_id=1256094073]
-shape = SubResource("RectangleShape2D_oxmic")
 
 [node name="SpawnPoint" parent="Objects" unique_id=1054604797 instance=ExtResource("5_dt1sm")]
 position = Vector2(-656, 336)

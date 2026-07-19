@@ -328,7 +328,7 @@ spawn_invincibility_duration = 1.0
 [node name="PlayerSprite" type="AnimatedSprite2D" parent="." unique_id=350306726]
 sprite_frames = SubResource("SpriteFrames_d2wks")
 animation = &"Idle"
-frame_progress = 0.29411128
+frame_progress = 0.0061476417
 offset = Vector2(0, -16)
 
 [node name="Equips" type="Marker2D" parent="." unique_id=636882154]

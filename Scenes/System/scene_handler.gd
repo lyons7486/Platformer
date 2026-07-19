@@ -34,6 +34,12 @@ const RIFLE_PROJECTILE_SCENE: PackedScene = preload(
 var current_level_path: String = ""
 
 ############################
+##   DEFEATED ENEMIES     ##
+############################
+
+var defeated_enemy_ids: PackedStringArray = []
+
+############################
 ##     CHECKPOINT STATE   ##
 ############################
 
@@ -242,6 +248,8 @@ func leave_game() -> void:
 #### MAIN MENU ####
 
 func load_main_menu() -> void:
+	defeated_enemy_ids.clear()
+	
 	clear_level()
 	clear_players()
 	clear_projectiles()
@@ -264,11 +272,14 @@ func load_level(
 	level_path: String = DEBUG_LEVEL_PATH
 ) -> void:
 	if multiplayer.multiplayer_peer == null:
+		defeated_enemy_ids.clear()
 		load_level_local(level_path)
 		return
 	
 	if not multiplayer.is_server():
 		return
+	
+	defeated_enemy_ids.clear()
 	
 	shared_waypoint_position = Vector2.ZERO
 	shared_waypoint_active = false
@@ -296,10 +307,17 @@ func client_level_ready() -> void:
 	if not multiplayer.is_server():
 		return
 	
-	var peer_id: int = multiplayer.get_remote_sender_id()
+	var peer_id: int = (
+		multiplayer.get_remote_sender_id()
+	)
 	
 	if peer_id <= 1:
 		return
+	
+	sync_defeated_enemies.rpc_id(
+		peer_id,
+		defeated_enemy_ids
+	)
 	
 	spawn_player(peer_id)
 
@@ -351,6 +369,67 @@ func load_player_status() -> void:
 		player_status
 	)
 
+############################
+##   DEFEATED ENEMIES     ##
+############################
+
+#### REGISTER DEFEATED ENEMY ####
+
+func register_defeated_enemy(
+	enemy_state_id: String
+) -> void:
+	if not multiplayer.is_server():
+		return
+	
+	if enemy_state_id.is_empty():
+		return
+	
+	if defeated_enemy_ids.has(enemy_state_id):
+		return
+	
+	defeated_enemy_ids.append(
+		enemy_state_id
+	)
+
+
+#### SYNC DEFEATED ENEMIES ####
+
+@rpc("authority", "call_remote", "reliable")
+func sync_defeated_enemies(
+	enemy_ids: PackedStringArray
+) -> void:
+	for enemy_state_id: String in enemy_ids:
+		remove_defeated_enemy(
+			enemy_state_id
+		)
+
+
+#### REMOVE DEFEATED ENEMY ####
+
+func remove_defeated_enemy(
+	enemy_state_id: String
+) -> void:
+	var level: Level = get_current_level()
+	
+	if level == null:
+		return
+	
+	var enemy_node: Node = level.get_node_or_null(
+		NodePath(enemy_state_id)
+	)
+	
+	if enemy_node == null:
+		return
+	
+	if enemy_node is WalkerEnemy:
+		var enemy: WalkerEnemy = (
+			enemy_node as WalkerEnemy
+		)
+		
+		enemy.apply_death()
+		return
+	
+	enemy_node.queue_free()
 
 ############################
 ##     PLAYER SPAWNING    ##

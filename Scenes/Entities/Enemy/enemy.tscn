@@ -2,6 +2,8 @@
 
 [ext_resource type="Script" uid="uid://bit8ohfo62q3l" path="res://Scenes/Entities/Enemy/enemy.gd" id="1_1bxle"]
 [ext_resource type="Texture2D" uid="uid://cbbb1u6f1xubk" path="res://Assets/Textures/Enemy/enemy_walker.png" id="2_yd8tt"]
+[ext_resource type="Script" uid="uid://5ttm5gpja2ua" path="res://Scripts/Combat/contact_hitbox.gd" id="3_0gvnl"]
+[ext_resource type="Script" uid="uid://coca8laphnpy4" path="res://Scripts/Components/player_detection_area.gd" id="3_aho25"]
 [ext_resource type="Script" uid="uid://ddifhs2ic80ns" path="res://Scripts/Components/health_component.gd" id="3_yd8tt"]
 [ext_resource type="PackedScene" uid="uid://hdmm5b2grmku" path="res://Scenes/Components/hurtbox.tscn" id="4_1opxp"]
 
@@ -56,6 +58,10 @@ animations = [{
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_b126r"]
 size = Vector2(6, 14)
 
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_g6miu"]
+radius = 36.0
+height = 86.0
+
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_1opxp"]
 properties/0/path = NodePath(".:network_position")
 properties/0/spawn = true
@@ -74,7 +80,7 @@ properties/4/spawn = true
 properties/4/replication_mode = 2
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_hqxv8"]
-radius = 6.0
+radius = 8.0
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_1opxp"]
 size = Vector2(14, 11)
@@ -110,6 +116,16 @@ target_position = Vector2(-6, 0)
 position = Vector2(7, 12)
 target_position = Vector2(6, 0)
 
+[node name="DetectionArea" type="Area2D" parent="." unique_id=1882204246]
+position = Vector2(0, 11)
+collision_layer = 0
+collision_mask = 0
+script = ExtResource("3_aho25")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="DetectionArea" unique_id=227802534]
+rotation = 1.5707964
+shape = SubResource("CapsuleShape2D_g6miu")
+
 [node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=1909447575]
 replication_config = SubResource("SceneReplicationConfig_1opxp")
 
@@ -118,11 +134,17 @@ position = Vector2(0, 11)
 
 [node name="Bite" type="Node2D" parent="Attacks" unique_id=448155555]
 
-[node name="Area2D" type="Area2D" parent="Attacks/Bite" unique_id=1136298741]
+[node name="ContactHitbox" type="Area2D" parent="Attacks/Bite" unique_id=1136298741]
+script = ExtResource("3_0gvnl")
+damage_type = 1
+knockback_strength = 100.0
+one_hit_per_activation = false
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Attacks/Bite/Area2D" unique_id=1817613154]
-position = Vector2(8, 0)
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Attacks/Bite/ContactHitbox" unique_id=1817613154]
 shape = SubResource("CircleShape2D_hqxv8")
+
+[node name="ContactTimer" type="Timer" parent="Attacks/Bite/ContactHitbox" unique_id=31879939]
+one_shot = true
 
 [node name="HealthComponent" type="Node" parent="." unique_id=1209269942]
 script = ExtResource("3_yd8tt")

@@ -87,9 +87,6 @@ var shooter_peer_id: int = 1
 	ProjectileTypes.BULLET
 )
 
-@export var remote_smoothing_speed: float = 20.0
-@export var remote_snap_distance: float = 64.0
-
 
 ############################
 ##         SETUP          ##
@@ -395,12 +392,14 @@ func lifetime_finished() -> void:
 
 #### CLIENT PROCESS ####
 
-func client_process(delta: float) -> void:
+func client_process(
+	_delta: float
+) -> void:
 	apply_remote_projectile_type()
-	update_remote_position(delta)
 	
 	direction = network_direction
 	
+	snap_to_network_position()
 	update_visual_direction()
 
 
@@ -418,29 +417,10 @@ func apply_remote_projectile_type() -> void:
 	hitbox.deactivate()
 
 
-#### UPDATE REMOTE POSITION ####
+#### SNAP TO NETWORK POSITION ####
 
-func update_remote_position(delta: float) -> void:
-	var distance_to_target: float = (
-		global_position.distance_to(
-			network_position
-		)
-	)
-	
-	if distance_to_target > remote_snap_distance:
-		global_position = network_position
-		return
-	
-	var smoothing_weight: float = clampf(
-		remote_smoothing_speed * delta,
-		0.0,
-		1.0
-	)
-	
-	global_position = global_position.lerp(
-		network_position,
-		smoothing_weight
-	)
+func snap_to_network_position() -> void:
+	global_position = network_position
 
 
 ############################

@@ -96,4 +96,7 @@ func damage_body(
 	
 	damage_data.add_tag(&"debug_hazard")
 	
+	if $AnimatedSprite2D.animation != "sprung":
+		$AnimatedSprite2D.play("sprung")
+	
 	player.take_damage(damage_data)
