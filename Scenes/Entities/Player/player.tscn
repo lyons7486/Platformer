@@ -6,6 +6,30 @@
 [ext_resource type="PackedScene" uid="uid://hdmm5b2grmku" path="res://Scenes/Components/hurtbox.tscn" id="4_22fhq"]
 [ext_resource type="Script" uid="uid://ddifhs2ic80ns" path="res://Scripts/Components/health_component.gd" id="4_fcpig"]
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_fcpig"]
+atlas = ExtResource("2_nuwc3")
+region = Rect2(576, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_y6hyn"]
+atlas = ExtResource("2_nuwc3")
+region = Rect2(608, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_75l7y"]
+atlas = ExtResource("2_nuwc3")
+region = Rect2(640, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_5o8lj"]
+atlas = ExtResource("2_nuwc3")
+region = Rect2(672, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_i4twt"]
+atlas = ExtResource("2_nuwc3")
+region = Rect2(704, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_q8fdp"]
+atlas = ExtResource("2_nuwc3")
+region = Rect2(736, 0, 32, 32)
+
 [sub_resource type="AtlasTexture" id="AtlasTexture_ykdah"]
 atlas = ExtResource("2_nuwc3")
 region = Rect2(416, 0, 32, 32)
@@ -88,6 +112,29 @@ region = Rect2(192, 0, 32, 32)
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_d2wks"]
 animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fcpig")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_y6hyn")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_75l7y")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_5o8lj")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_i4twt")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_q8fdp")
+}],
+"loop": 1,
+"name": &"Death",
+"speed": 12.0
+}, {
 "frames": [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_ykdah")
@@ -275,13 +322,13 @@ size = Vector2(8, 15)
 [node name="Player" type="CharacterBody2D" unique_id=735545274]
 collision_layer = 20
 script = ExtResource("1_er4f5")
-received_knockback_multiplier = 1.0
+damage_invincibility_duration = 0.5
+spawn_invincibility_duration = 1.0
 
 [node name="PlayerSprite" type="AnimatedSprite2D" parent="." unique_id=350306726]
 sprite_frames = SubResource("SpriteFrames_d2wks")
-animation = &"Hit"
-frame = 2
-frame_progress = 1.0
+animation = &"Idle"
+frame_progress = 0.29411128
 offset = Vector2(0, -16)
 
 [node name="Equips" type="Marker2D" parent="." unique_id=636882154]

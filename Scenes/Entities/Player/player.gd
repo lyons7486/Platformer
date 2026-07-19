@@ -118,7 +118,7 @@ var coyote_timer: float = 0.0
 @export var death_respawn_delay: float = 2.0
 
 @export_range(0.0, 1.0, 0.05)
-var received_knockback_multiplier: float = 0.5
+var received_knockback_multiplier: float = 1.0
 
 @export var maximum_received_knockback: Vector2 = Vector2(
 	90.0,
@@ -623,7 +623,7 @@ func take_damage(
 
 #### REQUEST DAMAGE ####
 
-@rpc("any_peer", "call_local", "reliable")
+@rpc("any_peer", "call_remote", "reliable", 1)
 func request_damage(
 	damage_amount: float,
 	damage_type_value: int,
@@ -1191,6 +1191,29 @@ func update_network_state() -> void:
 #### UPDATE REMOTE PLAYER ####
 
 func update_remote_player(delta: float) -> void:
+	if multiplayer.is_server():
+		update_server_player_proxy()
+	else:
+		smooth_remote_player_position(delta)
+	
+	apply_remote_player_state()
+
+
+#### UPDATE SERVER PLAYER PROXY ####
+
+func update_server_player_proxy() -> void:
+	## The server uses this player's physical body for
+	## hit detection. It must use the newest synchronized
+	## position rather than a visually smoothed position.
+	
+	global_position = network_position
+
+
+#### SMOOTH REMOTE PLAYER POSITION ####
+
+func smooth_remote_player_position(
+	delta: float
+) -> void:
 	var distance_to_network_position: float = (
 		global_position.distance_to(
 			network_position
@@ -1199,18 +1222,23 @@ func update_remote_player(delta: float) -> void:
 	
 	if distance_to_network_position > remote_snap_distance:
 		global_position = network_position
-	else:
-		var smoothing_weight: float = clampf(
-			remote_smoothing * delta,
-			0.0,
-			1.0
-		)
-		
-		global_position = global_position.lerp(
-			network_position,
-			smoothing_weight
-		)
+		return
 	
+	var smoothing_weight: float = clampf(
+		remote_smoothing * delta,
+		0.0,
+		1.0
+	)
+	
+	global_position = global_position.lerp(
+		network_position,
+		smoothing_weight
+	)
+
+
+#### APPLY REMOTE PLAYER STATE ####
+
+func apply_remote_player_state() -> void:
 	velocity = network_velocity
 	player_sprite.flip_h = network_flip_h
 	
