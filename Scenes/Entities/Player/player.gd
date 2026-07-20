@@ -21,6 +21,7 @@ signal local_player_died
 
 @onready var player_sprite: AnimatedSprite2D = $PlayerSprite
 @onready var animation_player: AnimationPlayer = $AnimationPlayer
+@onready var equips: Marker2D = $Equipsr
 
 @onready var body_collision: CollisionPolygon2D = (
 	$CollisionPolygon2D
@@ -147,6 +148,7 @@ var camera_smoothing_enabled_default: bool = true
 @export var network_velocity: Vector2 = Vector2.ZERO
 @export var network_animation: StringName = &"Idle"
 @export var network_flip_h: bool = false
+@export var network_dead: bool = false
 
 @export var remote_smoothing: float = 15.0
 @export var remote_snap_distance: float = 128.0
@@ -228,17 +230,17 @@ func _ready() -> void:
 #### PHYSICS PROCESS ####
 
 func _physics_process(delta: float) -> void:
-	if dead:
-		return
-	
 	if not is_local_player():
 		update_remote_player(delta)
+		return
+	
+	if dead:
 		return
 	
 	Global.player_position = global_position
 	
 	if dying:
-		process_death_knockback(delta)
+		process_death_animation(delta)
 		return
 	
 	get_input()
@@ -870,53 +872,104 @@ func finish_death_animation() -> void:
 	if not dying:
 		return
 	
-	dying = false
-	dead = true
-	
-	velocity = Vector2.ZERO
-	network_velocity = Vector2.ZERO
-	
-	update_network_state()
-	
-	broadcast_alive_state(false)
+	broadcast_dead_body_state(
+		global_position,
+		player_sprite.flip_h
+	)
 	
 	death_timer.start(
 		death_respawn_delay
 	)
 
+#### BROADCAST DEAD BODY STATE ####
 
-#### BROADCAST ALIVE STATE ####
-
-func broadcast_alive_state(
-	alive: bool
+func broadcast_dead_body_state(
+	corpse_position: Vector2,
+	corpse_flip_h: bool
 ) -> void:
 	if multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
-		apply_alive_state(alive)
+		apply_dead_body_state(
+			corpse_position,
+			corpse_flip_h
+		)
 		return
 	
-	apply_alive_state.rpc(alive)
+	apply_dead_body_state.rpc(
+		corpse_position,
+		corpse_flip_h
+	)
 
 
-#### APPLY ALIVE STATE ####
+#### APPLY DEAD BODY STATE ####
 
-@rpc("authority", "call_local", "reliable")
-func apply_alive_state(
-	alive: bool
+@rpc("authority", "call_local", "reliable", 2)
+func apply_dead_body_state(
+	corpse_position: Vector2,
+	corpse_flip_h: bool
 ) -> void:
-	dead = not alive
-	visible = alive
+	dead = true
+	dying = false
+	death_pending = false
+	
+	controls = false
+	
+	global_position = corpse_position
+	network_position = corpse_position
+	
+	velocity = Vector2.ZERO
+	network_velocity = Vector2.ZERO
+	
+	network_dead = true
+	network_animation = &"Death"
+	network_flip_h = corpse_flip_h
+	
+	animation_player.stop()
+	
+	modulate = Color.WHITE
+	player_sprite.modulate = Color.WHITE
+	
+	player_sprite.flip_h = corpse_flip_h
+	
+	hurtbox.set_hurtbox_enabled(false)
 	
 	body_collision.set_deferred(
 		"disabled",
-		not alive
+		true
 	)
 	
-	if not alive:
-		hurtbox.set_hurtbox_enabled(false)
+	equips.visible = false
+	visible = true
+	
+	hold_player_death_frame()
+
+#### HOLD PLAYER DEATH FRAME ####
+
+func hold_player_death_frame() -> void:
+	if player_sprite.sprite_frames == null:
 		return
 	
-	if not is_local_player():
-		hurtbox.set_hurtbox_enabled(false)
+	if not player_sprite.sprite_frames.has_animation(
+		&"Death"
+	):
+		return
+	
+	var frame_count: int = (
+		player_sprite.sprite_frames.get_frame_count(
+			&"Death"
+		)
+	)
+	
+	if frame_count <= 0:
+		return
+	
+	player_sprite.play(&"Death")
+	
+	player_sprite.set_frame_and_progress(
+		frame_count - 1,
+		1.0
+	)
+	
+	player_sprite.pause()
 
 
 ############################
@@ -1096,29 +1149,39 @@ func apply_respawn_state(
 	new_position: Vector2
 ) -> void:
 	dead = false
+	dying = false
+	death_pending = false
+	
+	network_dead = false
+	
 	visible = true
+	equips.visible = true
 	
 	global_position = new_position
 	network_position = new_position
-
+	
 	velocity = Vector2.ZERO
 	network_velocity = Vector2.ZERO
-
+	
+	animation_player.stop()
+	
+	modulate = Color.WHITE
+	player_sprite.modulate = Color.WHITE
+	
 	player_sprite.play(&"Idle")
-
+	
 	player_sprite.set_frame_and_progress(
 		0,
 		0.0
 	)
-
+	
 	network_animation = &"Idle"
-
+	network_flip_h = player_sprite.flip_h
+	
 	body_collision.set_deferred(
 		"disabled",
 		false
 	)
-	
-	## Only the owning player's Hurtbox performs damage processing. 
 	
 	if not is_local_player():
 		hurtbox.set_hurtbox_enabled(false)
@@ -1161,6 +1224,14 @@ func spawn_in() -> void:
 	dead = false
 	dying = false
 	death_pending = false
+
+	network_dead = false
+
+	visible = true
+	equips.visible = true
+
+	player_sprite.play(&"Idle")
+	network_animation = &"Idle"
 	
 	visible = true
 	
@@ -1223,6 +1294,7 @@ func update_network_state() -> void:
 	network_velocity = velocity
 	network_animation = player_sprite.animation
 	network_flip_h = player_sprite.flip_h
+	network_dead = dead
 
 
 #### UPDATE REMOTE PLAYER ####
@@ -1279,8 +1351,19 @@ func apply_remote_player_state() -> void:
 	velocity = network_velocity
 	player_sprite.flip_h = network_flip_h
 	
+	if network_dead:
+		if not dead:
+			apply_dead_body_state(
+				network_position,
+				network_flip_h
+			)
+		
+		return
+	
 	if player_sprite.animation != network_animation:
-		player_sprite.play(network_animation)
+		player_sprite.play(
+			network_animation
+		)
 
 
 ############################
@@ -1408,9 +1491,9 @@ func control_finished() -> void:
 	
 	controls = true
 
-#### PROCESS DEATH KNOCKBACK ####
+#### PROCESS DEATH ANIMATION ####
 
-func process_death_knockback(
+func process_death_animation(
 	delta: float
 ) -> void:
 	handle_gravity(delta)

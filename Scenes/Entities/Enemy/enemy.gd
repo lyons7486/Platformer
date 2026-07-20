@@ -25,11 +25,6 @@ extends CharacterBody2D
 @onready var health_component: HealthComponent = $HealthComponent
 @onready var hurtbox: Hurtbox = $Hurtbox
 
-@onready var death_knockback_timer: Timer = (
-	$DeathKnockbackTimer
-)
-
-
 
 ############################
 ##        MOVEMENT        ##
@@ -44,6 +39,10 @@ extends CharacterBody2D
 @export var chase_stop_distance: float = 4.0
 
 var direction: float = 1.0
+
+var movement_rng: RandomNumberGenerator = (
+	RandomNumberGenerator.new()
+)
 
 
 ############################
@@ -81,9 +80,6 @@ var hit_flash_duration: float = 0.15
 	1.0
 )
 
-@export_range(0.05, 2.0, 0.05)
-var death_knockback_duration: float = 0.35
-
 
 ############################
 ##    HIT FEEDBACK STATE  ##
@@ -120,16 +116,34 @@ var enemy_state_id: String = ""
 ##       LIFECYCLE        ##
 ############################
 
+#### READY ####
+
 func _ready() -> void:
+	default_sprite_modulate = animated_sprite.self_modulate
+	
 	initialize_enemy_state_id()
 	connect_animation_signals()
 	
 	setup_combat_components()
 	connect_combat_signals()
-	initialize_network_state()
 	
-	if not multiplayer.is_server():
-		return
+	if multiplayer.is_server():
+		initialize_random_direction()
+	
+	initialize_network_state()
+
+
+############################
+##    INITIAL DIRECTION   ##
+############################
+
+#### INITIALIZE RANDOM DIRECTION ####
+
+func initialize_random_direction() -> void:
+	movement_rng.seed = (
+		int(Time.get_ticks_usec())
+		^ int(get_instance_id())
+	)
 	
 	pick_random_direction()
 
@@ -154,20 +168,6 @@ func _physics_process(delta: float) -> void:
 		server_process(delta)
 	else:
 		client_process(delta)
-
-############################
-##    TIMER CONNECTIONS   ##
-############################
-
-#### CONNECT TIMERS ####
-
-func connect_timers() -> void:
-	if not death_knockback_timer.timeout.is_connected(
-		finish_death_knockback
-	):
-		death_knockback_timer.timeout.connect(
-			finish_death_knockback
-		)
 
 
 ############################
@@ -342,11 +342,11 @@ func enemy_died(
 	
 	death_pending = true
 	
-	register_defeated_enemy()
 	disable_enemy_combat()
+	register_defeated_enemy_state()
 	
-	# The HealthComponent emits its death signal before
-	# the Hurtbox finishes applying fatal knockback.
+	# Allow the Hurtbox to finish applying the fatal
+	# knockback before the Death animation begins.
 	
 	call_deferred(
 		"begin_death_animation"
@@ -364,41 +364,6 @@ func disable_enemy_combat() -> void:
 	
 	contact_hitbox.stop_contact_damage()
 
-#### BEGIN DEATH KNOCKBACK ####
-
-func begin_death_knockback() -> void:
-	if not multiplayer.is_server():
-		return
-	
-	if not death_pending:
-		return
-	
-	death_pending = false
-	dying = true
-	
-	direction = 0.0
-	
-	animated_sprite.play(&"Idle")
-	
-	update_network_state()
-	
-	death_knockback_timer.start(
-		death_knockback_duration
-	)
-
-
-#### FINISH DEATH KNOCKBACK ####
-
-func finish_death_knockback() -> void:
-	if not multiplayer.is_server():
-		return
-	
-	if not dying:
-		return
-	
-	dying = false
-	
-	broadcast_death()
 
 #### BEGIN DEATH ANIMATION ####
 
@@ -414,9 +379,15 @@ func begin_death_animation() -> void:
 	
 	direction = 0.0
 	
+	stop_hit_flash()
+	animated_sprite.self_modulate = (
+		default_sprite_modulate
+	)
+	
 	animated_sprite.play(&"Death")
 	
 	update_network_state()
+	register_defeated_enemy_state()
 
 
 #### FINISH DEATH ANIMATION ####
@@ -428,14 +399,20 @@ func finish_death_animation() -> void:
 	if not dying:
 		return
 	
-	dying = false
+	register_defeated_enemy_state()
 	
-	broadcast_death()
+	broadcast_corpse_state(
+		global_position,
+		animated_sprite.flip_h
+	)
 
 
-#### REGISTER DEFEATED ENEMY ####
+#### REGISTER DEFEATED ENEMY STATE ####
 
-func register_defeated_enemy() -> void:
+func register_defeated_enemy_state() -> void:
+	if not multiplayer.is_server():
+		return
+	
 	if enemy_state_id.is_empty():
 		return
 	
@@ -444,36 +421,54 @@ func register_defeated_enemy() -> void:
 	)
 	
 	if scene_handler == null:
-		push_warning(
-			"%s could not find SceneHandler."
-			% name
-		)
 		return
 	
 	scene_handler.register_defeated_enemy(
-		enemy_state_id
+		enemy_state_id,
+		global_position,
+		animated_sprite.flip_h
 	)
 
-#### BROADCAST DEATH ####
+#### BROADCAST CORPSE STATE ####
 
-func broadcast_death() -> void:
+func broadcast_corpse_state(
+	corpse_position: Vector2,
+	corpse_flip_h: bool
+) -> void:
 	if multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
-		apply_death()
+		apply_corpse_state(
+			corpse_position,
+			corpse_flip_h
+		)
 		return
 	
-	apply_death.rpc()
+	apply_corpse_state.rpc(
+		corpse_position,
+		corpse_flip_h
+	)
 
 
-#### APPLY DEATH ####
+#### APPLY CORPSE STATE ####
 
 @rpc("authority", "call_local", "reliable")
-func apply_death() -> void:
-	if dead:
-		return
-	
+func apply_corpse_state(
+	corpse_position: Vector2,
+	corpse_flip_h: bool
+) -> void:
 	dead = true
 	dying = false
 	death_pending = false
+	
+	global_position = corpse_position
+	
+	network_position = corpse_position
+	network_velocity = Vector2.ZERO
+	network_direction = 0.0
+	network_animation = &"Death"
+	network_flip_h = corpse_flip_h
+	
+	velocity = Vector2.ZERO
+	direction = 0.0
 	
 	set_physics_process(false)
 	
@@ -486,11 +481,47 @@ func apply_death() -> void:
 		true
 	)
 	
-	visible = false
+	stop_hit_flash()
 	
-	call_deferred(
-		"queue_free"
+	animated_sprite.self_modulate = (
+		default_sprite_modulate
 	)
+	
+	animated_sprite.flip_h = corpse_flip_h
+	
+	visible = true
+	
+	hold_enemy_death_frame()
+
+
+#### HOLD ENEMY DEATH FRAME ####
+
+func hold_enemy_death_frame() -> void:
+	if animated_sprite.sprite_frames == null:
+		return
+	
+	if not animated_sprite.sprite_frames.has_animation(
+		&"Death"
+	):
+		return
+	
+	var frame_count: int = (
+		animated_sprite.sprite_frames.get_frame_count(
+			&"Death"
+		)
+	)
+	
+	if frame_count <= 0:
+		return
+	
+	animated_sprite.play(&"Death")
+	
+	animated_sprite.set_frame_and_progress(
+		frame_count - 1,
+		1.0
+	)
+	
+	animated_sprite.pause()
 
 
 ############################
@@ -532,18 +563,7 @@ func process_death_animation(
 	move_and_slide()
 	
 	update_network_state()
-
-
-#### PROCESS DEATH KNOCKBACK ####
-
-func process_death_knockback(
-	delta: float
-) -> void:
-	handle_gravity(delta)
-	
-	move_and_slide()
-	
-	update_network_state()
+	register_defeated_enemy_state()
 
 
 ############################
@@ -657,16 +677,28 @@ func is_direction_blocked(
 func turn_around() -> void:
 	direction *= -1.0
 	velocity.x = 0.0
+	
+	apply_facing_direction()
 
 
 #### PICK RANDOM DIRECTION ####
 
 func pick_random_direction() -> void:
-	if randi_range(0, 1) == 0:
+	if movement_rng.randi_range(0, 1) == 0:
 		direction = -1.0
-		return
+	else:
+		direction = 1.0
 	
-	direction = 1.0
+	apply_facing_direction()
+
+
+#### APPLY FACING DIRECTION ####
+
+func apply_facing_direction() -> void:
+	if direction < 0.0:
+		animated_sprite.flip_h = true
+	elif direction > 0.0:
+		animated_sprite.flip_h = false
 
 
 ############################
@@ -785,10 +817,8 @@ func handle_animation() -> void:
 	else:
 		animated_sprite.play(&"Idle")
 	
-	if direction < 0.0:
-		animated_sprite.flip_h = true
-	elif direction > 0.0:
-		animated_sprite.flip_h = false
+	apply_facing_direction()
+
 
 ############################
 ##     ENEMY STATE ID     ##

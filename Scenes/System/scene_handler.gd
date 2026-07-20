@@ -37,7 +37,7 @@ var current_level_path: String = ""
 ##   DEFEATED ENEMIES     ##
 ############################
 
-var defeated_enemy_ids: PackedStringArray = []
+var defeated_enemy_states: Dictionary = {}
 
 ############################
 ##     CHECKPOINT STATE   ##
@@ -248,7 +248,7 @@ func leave_game() -> void:
 #### MAIN MENU ####
 
 func load_main_menu() -> void:
-	defeated_enemy_ids.clear()
+	defeated_enemy_states.clear()
 	
 	clear_level()
 	clear_players()
@@ -272,14 +272,14 @@ func load_level(
 	level_path: String = DEBUG_LEVEL_PATH
 ) -> void:
 	if multiplayer.multiplayer_peer == null:
-		defeated_enemy_ids.clear()
+		defeated_enemy_states.clear()
 		load_level_local(level_path)
 		return
 	
 	if not multiplayer.is_server():
 		return
 	
-	defeated_enemy_ids.clear()
+	defeated_enemy_states.clear()
 	
 	shared_waypoint_position = Vector2.ZERO
 	shared_waypoint_active = false
@@ -316,7 +316,7 @@ func client_level_ready() -> void:
 	
 	sync_defeated_enemies.rpc_id(
 		peer_id,
-		defeated_enemy_ids
+		defeated_enemy_states.duplicate(true)
 	)
 	
 	spawn_player(peer_id)
@@ -376,7 +376,9 @@ func load_player_status() -> void:
 #### REGISTER DEFEATED ENEMY ####
 
 func register_defeated_enemy(
-	enemy_state_id: String
+	enemy_state_id: String,
+	corpse_position: Vector2,
+	corpse_flip_h: bool
 ) -> void:
 	if not multiplayer.is_server():
 		return
@@ -384,30 +386,41 @@ func register_defeated_enemy(
 	if enemy_state_id.is_empty():
 		return
 	
-	if defeated_enemy_ids.has(enemy_state_id):
-		return
-	
-	defeated_enemy_ids.append(
-		enemy_state_id
-	)
+	defeated_enemy_states[enemy_state_id] = {
+		"position": corpse_position,
+		"flip_h": corpse_flip_h
+	}
 
 
 #### SYNC DEFEATED ENEMIES ####
 
 @rpc("authority", "call_remote", "reliable")
 func sync_defeated_enemies(
-	enemy_ids: PackedStringArray
+	enemy_states: Dictionary
 ) -> void:
-	for enemy_state_id: String in enemy_ids:
-		remove_defeated_enemy(
-			enemy_state_id
+	for enemy_id_variant: Variant in enemy_states.keys():
+		var enemy_state_id: String = String(
+			enemy_id_variant
+		)
+		
+		var state_variant: Variant = (
+			enemy_states[enemy_id_variant]
+		)
+		
+		if not state_variant is Dictionary:
+			continue
+		
+		apply_defeated_enemy_state(
+			enemy_state_id,
+			state_variant as Dictionary
 		)
 
 
-#### REMOVE DEFEATED ENEMY ####
+#### APPLY DEFEATED ENEMY STATE ####
 
-func remove_defeated_enemy(
-	enemy_state_id: String
+func apply_defeated_enemy_state(
+	enemy_state_id: String,
+	enemy_state: Dictionary
 ) -> void:
 	var level: Level = get_current_level()
 	
@@ -418,18 +431,31 @@ func remove_defeated_enemy(
 		NodePath(enemy_state_id)
 	)
 	
-	if enemy_node == null:
+	if not enemy_node is WalkerEnemy:
 		return
 	
-	if enemy_node is WalkerEnemy:
-		var enemy: WalkerEnemy = (
-			enemy_node as WalkerEnemy
+	if not enemy_state.has("position"):
+		return
+	
+	var corpse_position: Vector2 = (
+		enemy_state["position"]
+	)
+	
+	var corpse_flip_h: bool = bool(
+		enemy_state.get(
+			"flip_h",
+			false
 		)
-		
-		enemy.apply_death()
-		return
+	)
 	
-	enemy_node.queue_free()
+	var enemy: WalkerEnemy = (
+		enemy_node as WalkerEnemy
+	)
+	
+	enemy.apply_corpse_state(
+		corpse_position,
+		corpse_flip_h
+	)
 
 ############################
 ##     PLAYER SPAWNING    ##
