@@ -28,9 +28,7 @@ signal local_player_died
 
 @onready var respawn_timer: Timer = $RespawnTimer
 @onready var control_timer: Timer = $ControlTimer
-@onready var death_knockback_timer: Timer = (
-	$DeathKnockbackTimer
-)
+
 
 @onready var death_timer: Timer = $DeathTimer
 
@@ -114,7 +112,6 @@ var coyote_timer: float = 0.0
 @export var damage_invincibility_duration: float = 0.75
 @export var spawn_invincibility_duration: float = 1.4
 
-@export var death_knockback_duration: float = 0.35
 @export var death_respawn_delay: float = 2.0
 
 @export_range(0.0, 1.0, 0.05)
@@ -211,6 +208,7 @@ func _ready() -> void:
 	
 	setup_combat_components()
 	connect_combat_signals()
+	connect_animation_signals()
 	setup_local_player_group()
 	
 	network_position = global_position
@@ -584,6 +582,35 @@ func connect_combat_signals() -> void:
 			player_knockback_requested
 		)
 
+############################
+##   ANIMATION SIGNALS    ##
+############################
+
+#### CONNECT ANIMATION SIGNALS ####
+
+func connect_animation_signals() -> void:
+	if not player_sprite.animation_finished.is_connected(
+		player_sprite_animation_finished
+	):
+		player_sprite.animation_finished.connect(
+			player_sprite_animation_finished
+		)
+
+
+#### PLAYER SPRITE ANIMATION FINISHED ####
+
+func player_sprite_animation_finished() -> void:
+	if not is_local_player():
+		return
+	
+	if not dying:
+		return
+	
+	if player_sprite.animation != &"Death":
+		return
+	
+	finish_death_animation()
+
 
 ############################
 ##     DAMAGE ROUTING     ##
@@ -826,14 +853,17 @@ func begin_death_knockback() -> void:
 	controls = false
 	direction = 0.0
 	
-	death_knockback_timer.start(
-		death_knockback_duration
-	)
+	hit_reaction_active = false
+	hit_reaction_time_remaining = 0.0
+	
+	player_sprite.play(&"Death")
+	
+	update_network_state()
 
 
-#### FINISH DEATH KNOCKBACK ####
+#### FINISH DEATH ANIMATION ####
 
-func finish_death_knockback() -> void:
+func finish_death_animation() -> void:
 	if not is_local_player():
 		return
 	
@@ -1069,12 +1099,20 @@ func apply_respawn_state(
 	visible = true
 	
 	global_position = new_position
-	
 	network_position = new_position
-	
+
 	velocity = Vector2.ZERO
 	network_velocity = Vector2.ZERO
-	
+
+	player_sprite.play(&"Idle")
+
+	player_sprite.set_frame_and_progress(
+		0,
+		0.0
+	)
+
+	network_animation = &"Idle"
+
 	body_collision.set_deferred(
 		"disabled",
 		false
@@ -1136,7 +1174,6 @@ func spawn_in() -> void:
 	hit_reaction_active = false
 	hit_reaction_time_remaining = 0.0
 	
-	death_knockback_timer.stop()
 	death_timer.stop()
 	control_timer.stop()
 	
@@ -1334,13 +1371,6 @@ func connect_timers() -> void:
 	):
 		control_timer.timeout.connect(
 			control_finished
-		)
-	
-	if not death_knockback_timer.timeout.is_connected(
-		finish_death_knockback
-	):
-		death_knockback_timer.timeout.connect(
-			finish_death_knockback
 		)
 	
 	if not death_timer.timeout.is_connected(

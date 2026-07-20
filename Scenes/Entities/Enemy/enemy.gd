@@ -10,16 +10,25 @@ extends CharacterBody2D
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var body_collision: CollisionShape2D = $CollisionShape2D
 
-@onready var ground_check_left: RayCast2D = $GroundCheckLeft
-@onready var ground_check_right: RayCast2D = $GroundCheckRight
+@onready var ground_check_left: RayCast2D = $CheckArea/GroundCheckLeft
+@onready var ground_check_right: RayCast2D = $CheckArea/GroundCheckRight
 
-@onready var wall_check_left: RayCast2D = $WallCheckLeft
-@onready var wall_check_right: RayCast2D = $WallCheckRight
+@onready var wall_check_left: RayCast2D = $CheckArea/WallCheckLeft
+@onready var wall_check_right: RayCast2D = $CheckArea/WallCheckRight
 
 @onready var detection_area: PlayerDetectionArea = $DetectionArea
 
+@onready var contact_hitbox: ContactHitbox = (
+	$Attacks/Bite/ContactHitbox
+)
+
 @onready var health_component: HealthComponent = $HealthComponent
 @onready var hurtbox: Hurtbox = $Hurtbox
+
+@onready var death_knockback_timer: Timer = (
+	$DeathKnockbackTimer
+)
+
 
 
 ############################
@@ -52,10 +61,44 @@ var target_player: PlatformPlayer = null
 
 
 ############################
+##      DEATH SETTINGS    ##
+############################
+
+@export var death_horizontal_friction: float = 180.0
+
+
+############################
+##     HIT FEEDBACK       ##
+############################
+
+@export_range(0.01, 1.0, 0.01)
+var hit_flash_duration: float = 0.15
+
+@export var hit_flash_color: Color = Color(
+	1.0,
+	0.15,
+	0.15,
+	1.0
+)
+
+@export_range(0.05, 2.0, 0.05)
+var death_knockback_duration: float = 0.35
+
+
+############################
+##    HIT FEEDBACK STATE  ##
+############################
+
+var default_sprite_modulate: Color = Color.WHITE
+var hit_flash_tween: Tween = null
+
+############################
 ##      COMBAT STATE      ##
 ############################
 
 var dead: bool = false
+var dying: bool = false
+var death_pending: bool = false
 
 var enemy_state_id: String = ""
 
@@ -77,10 +120,9 @@ var enemy_state_id: String = ""
 ##       LIFECYCLE        ##
 ############################
 
-#### READY ####
-
 func _ready() -> void:
 	initialize_enemy_state_id()
+	connect_animation_signals()
 	
 	setup_combat_components()
 	connect_combat_signals()
@@ -112,6 +154,20 @@ func _physics_process(delta: float) -> void:
 		server_process(delta)
 	else:
 		client_process(delta)
+
+############################
+##    TIMER CONNECTIONS   ##
+############################
+
+#### CONNECT TIMERS ####
+
+func connect_timers() -> void:
+	if not death_knockback_timer.timeout.is_connected(
+		finish_death_knockback
+	):
+		death_knockback_timer.timeout.connect(
+			finish_death_knockback
+		)
 
 
 ############################
@@ -161,6 +217,36 @@ func connect_combat_signals() -> void:
 		)
 
 
+############################
+##   ANIMATION SIGNALS    ##
+############################
+
+#### CONNECT ANIMATION SIGNALS ####
+
+func connect_animation_signals() -> void:
+	if not animated_sprite.animation_finished.is_connected(
+		enemy_animation_finished
+	):
+		animated_sprite.animation_finished.connect(
+			enemy_animation_finished
+		)
+
+
+#### ENEMY ANIMATION FINISHED ####
+
+func enemy_animation_finished() -> void:
+	if not multiplayer.is_server():
+		return
+	
+	if not dying:
+		return
+	
+	if animated_sprite.animation != &"Death":
+		return
+	
+	finish_death_animation()
+
+
 #### ENEMY DAMAGED ####
 
 func enemy_damaged(
@@ -171,6 +257,8 @@ func enemy_damaged(
 	if not multiplayer.is_server():
 		return
 	
+	broadcast_hit_flash()
+	
 	print(
 		"%s took %.1f damage. Health: %.1f / %.1f"
 		% [
@@ -180,6 +268,50 @@ func enemy_damaged(
 			health_component.maximum_health
 		]
 	)
+
+############################
+##       HIT FLASH        ##
+############################
+
+#### BROADCAST HIT FLASH ####
+
+func broadcast_hit_flash() -> void:
+	if multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
+		play_hit_flash()
+		return
+	
+	play_hit_flash.rpc()
+
+
+#### PLAY HIT FLASH ####
+
+@rpc("authority", "call_local", "unreliable", 2)
+func play_hit_flash() -> void:
+	if dead:
+		return
+	
+	stop_hit_flash()
+	
+	animated_sprite.self_modulate = hit_flash_color
+	
+	hit_flash_tween = create_tween()
+	
+	hit_flash_tween.tween_property(
+		animated_sprite,
+		"self_modulate",
+		default_sprite_modulate,
+		hit_flash_duration
+	)
+
+
+#### STOP HIT FLASH ####
+
+func stop_hit_flash() -> void:
+	if hit_flash_tween != null:
+		if hit_flash_tween.is_valid():
+			hit_flash_tween.kill()
+	
+	hit_flash_tween = null
 
 
 #### ENEMY KNOCKBACK REQUESTED ####
@@ -205,11 +337,101 @@ func enemy_died(
 	if not multiplayer.is_server():
 		return
 	
-	if dead:
+	if dead or dying or death_pending:
 		return
 	
+	death_pending = true
+	
 	register_defeated_enemy()
+	disable_enemy_combat()
+	
+	# The HealthComponent emits its death signal before
+	# the Hurtbox finishes applying fatal knockback.
+	
+	call_deferred(
+		"begin_death_animation"
+	)
+
+
+#### DISABLE ENEMY COMBAT ####
+
+func disable_enemy_combat() -> void:
+	direction = 0.0
+	target_player = null
+	
+	detection_area.set_detection_enabled(false)
+	hurtbox.set_hurtbox_enabled(false)
+	
+	contact_hitbox.stop_contact_damage()
+
+#### BEGIN DEATH KNOCKBACK ####
+
+func begin_death_knockback() -> void:
+	if not multiplayer.is_server():
+		return
+	
+	if not death_pending:
+		return
+	
+	death_pending = false
+	dying = true
+	
+	direction = 0.0
+	
+	animated_sprite.play(&"Idle")
+	
+	update_network_state()
+	
+	death_knockback_timer.start(
+		death_knockback_duration
+	)
+
+
+#### FINISH DEATH KNOCKBACK ####
+
+func finish_death_knockback() -> void:
+	if not multiplayer.is_server():
+		return
+	
+	if not dying:
+		return
+	
+	dying = false
+	
 	broadcast_death()
+
+#### BEGIN DEATH ANIMATION ####
+
+func begin_death_animation() -> void:
+	if not multiplayer.is_server():
+		return
+	
+	if not death_pending:
+		return
+	
+	death_pending = false
+	dying = true
+	
+	direction = 0.0
+	
+	animated_sprite.play(&"Death")
+	
+	update_network_state()
+
+
+#### FINISH DEATH ANIMATION ####
+
+func finish_death_animation() -> void:
+	if not multiplayer.is_server():
+		return
+	
+	if not dying:
+		return
+	
+	dying = false
+	
+	broadcast_death()
+
 
 #### REGISTER DEFEATED ENEMY ####
 
@@ -250,12 +472,15 @@ func apply_death() -> void:
 		return
 	
 	dead = true
+	dying = false
+	death_pending = false
 	
 	set_physics_process(false)
 	
 	detection_area.set_detection_enabled(false)
-	
 	hurtbox.set_hurtbox_enabled(false)
+	contact_hitbox.stop_contact_damage()
+	
 	body_collision.set_deferred(
 		"disabled",
 		true
@@ -275,6 +500,10 @@ func apply_death() -> void:
 #### SERVER PROCESS ####
 
 func server_process(delta: float) -> void:
+	if dying:
+		process_death_animation(delta)
+		return
+	
 	update_target_player()
 	
 	handle_gravity(delta)
@@ -284,6 +513,36 @@ func server_process(delta: float) -> void:
 	move_and_slide()
 	
 	handle_animation()
+	update_network_state()
+
+
+#### PROCESS DEATH ANIMATION ####
+
+func process_death_animation(
+	delta: float
+) -> void:
+	handle_gravity(delta)
+	
+	velocity.x = move_toward(
+		velocity.x,
+		0.0,
+		death_horizontal_friction * delta
+	)
+	
+	move_and_slide()
+	
+	update_network_state()
+
+
+#### PROCESS DEATH KNOCKBACK ####
+
+func process_death_knockback(
+	delta: float
+) -> void:
+	handle_gravity(delta)
+	
+	move_and_slide()
+	
 	update_network_state()
 
 

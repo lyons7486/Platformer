@@ -267,3 +267,15 @@ func remove_invalid_players() -> void:
 		overlapping_players.remove_at(
 			player_index
 		)
+
+############################
+##    CONTACT SHUTDOWN    ##
+############################
+
+#### STOP CONTACT DAMAGE ####
+
+func stop_contact_damage() -> void:
+	deactivate()
+	
+	contact_timer.stop()
+	overlapping_players.clear()

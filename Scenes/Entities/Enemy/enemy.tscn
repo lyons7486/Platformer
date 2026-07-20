@@ -7,6 +7,36 @@
 [ext_resource type="Script" uid="uid://ddifhs2ic80ns" path="res://Scripts/Components/health_component.gd" id="3_yd8tt"]
 [ext_resource type="PackedScene" uid="uid://hdmm5b2grmku" path="res://Scenes/Components/hurtbox.tscn" id="4_1opxp"]
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_b126r"]
+size = Vector2(6, 14)
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_g6miu"]
+radius = 36.0
+height = 86.0
+
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_1opxp"]
+properties/0/path = NodePath(".:network_position")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+properties/1/path = NodePath(".:network_velocity")
+properties/1/spawn = true
+properties/1/replication_mode = 1
+properties/2/path = NodePath(".:network_direction")
+properties/2/spawn = true
+properties/2/replication_mode = 1
+properties/3/path = NodePath(".:network_animation")
+properties/3/spawn = true
+properties/3/replication_mode = 2
+properties/4/path = NodePath(".:network_flip_h")
+properties/4/spawn = true
+properties/4/replication_mode = 2
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_hqxv8"]
+radius = 7.0
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1opxp"]
+size = Vector2(14, 9)
+
 [sub_resource type="AtlasTexture" id="AtlasTexture_of2al"]
 atlas = ExtResource("2_yd8tt")
 region = Rect2(288, 0, 32, 32)
@@ -142,9 +172,9 @@ animations = [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_efuv8")
 }],
-"loop": 1,
+"loop": 0,
 "name": &"Death",
-"speed": 5.0
+"speed": 12.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -184,63 +214,31 @@ animations = [{
 "speed": 9.0
 }]
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_b126r"]
-size = Vector2(6, 14)
-
-[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_g6miu"]
-radius = 36.0
-height = 86.0
-
-[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_1opxp"]
-properties/0/path = NodePath(".:network_position")
-properties/0/spawn = true
-properties/0/replication_mode = 1
-properties/1/path = NodePath(".:network_velocity")
-properties/1/spawn = true
-properties/1/replication_mode = 1
-properties/2/path = NodePath(".:network_direction")
-properties/2/spawn = true
-properties/2/replication_mode = 1
-properties/3/path = NodePath(".:network_animation")
-properties/3/spawn = true
-properties/3/replication_mode = 2
-properties/4/path = NodePath(".:network_flip_h")
-properties/4/spawn = true
-properties/4/replication_mode = 2
-
-[sub_resource type="CircleShape2D" id="CircleShape2D_hqxv8"]
-radius = 8.0
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_1opxp"]
-size = Vector2(14, 11)
-
 [node name="Enemy" type="CharacterBody2D" unique_id=11946664]
 collision_layer = 0
 collision_mask = 9
 script = ExtResource("1_1bxle")
-
-[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=857154996]
-sprite_frames = SubResource("SpriteFrames_uqwq4")
-animation = &"Attack"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1442734663]
 position = Vector2(0, 13)
 rotation = 1.5708
 shape = SubResource("RectangleShape2D_b126r")
 
-[node name="GroundCheckLeft" type="RayCast2D" parent="." unique_id=543722044]
+[node name="CheckArea" type="Node2D" parent="." unique_id=336104984]
+
+[node name="GroundCheckLeft" type="RayCast2D" parent="CheckArea" unique_id=543722044]
 position = Vector2(-7, 16)
 target_position = Vector2(0, 10)
 
-[node name="GroundCheckRight" type="RayCast2D" parent="." unique_id=3828184]
+[node name="GroundCheckRight" type="RayCast2D" parent="CheckArea" unique_id=3828184]
 position = Vector2(7, 16)
 target_position = Vector2(0, 10)
 
-[node name="WallCheckLeft" type="RayCast2D" parent="." unique_id=29314957]
+[node name="WallCheckLeft" type="RayCast2D" parent="CheckArea" unique_id=29314957]
 position = Vector2(-7, 12)
 target_position = Vector2(-6, 0)
 
-[node name="WallCheckRight" type="RayCast2D" parent="." unique_id=874626251]
+[node name="WallCheckRight" type="RayCast2D" parent="CheckArea" unique_id=874626251]
 position = Vector2(7, 12)
 target_position = Vector2(6, 0)
 
@@ -283,7 +281,14 @@ starting_health = 30.0
 use_invincibility_frames = false
 
 [node name="CollisionShape2D" parent="Hurtbox" index="0" unique_id=1226976083]
-position = Vector2(0, 10.5)
+position = Vector2(0, 11.5)
 shape = SubResource("RectangleShape2D_1opxp")
+
+[node name="DeathKnockbackTimer" type="Timer" parent="." unique_id=885598920]
+one_shot = true
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=857154996]
+sprite_frames = SubResource("SpriteFrames_uqwq4")
+animation = &"Idle"
 
 [editable path="Hurtbox"]

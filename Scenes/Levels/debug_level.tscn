@@ -462,4 +462,22 @@ position = Vector2(-307, 416)
 [node name="Enemy3" parent="Enemies" unique_id=195638360 instance=ExtResource("7_g2g1g")]
 position = Vector2(-251, 416)
 
+[node name="Enemy4" parent="Enemies" unique_id=1149676908 instance=ExtResource("7_g2g1g")]
+position = Vector2(-288, 416)
+
+[node name="Enemy5" parent="Enemies" unique_id=90177969 instance=ExtResource("7_g2g1g")]
+position = Vector2(-232, 416)
+
+[node name="Enemy6" parent="Enemies" unique_id=1442906980 instance=ExtResource("7_g2g1g")]
+position = Vector2(-270, 416)
+
+[node name="Enemy7" parent="Enemies" unique_id=866751482 instance=ExtResource("7_g2g1g")]
+position = Vector2(-214, 416)
+
+[node name="Enemy8" parent="Enemies" unique_id=307185181 instance=ExtResource("7_g2g1g")]
+position = Vector2(-251, 416)
+
+[node name="Enemy9" parent="Enemies" unique_id=1592759398 instance=ExtResource("7_g2g1g")]
+position = Vector2(-195, 416)
+
 [connection signal="body_entered" from="VoidArea" to="." method="respawn"]
