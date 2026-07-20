@@ -853,3 +853,74 @@ func find_parent_level() -> Level:
 		current_node = current_node.get_parent()
 	
 	return null
+
+
+############################
+##      VOID REMOVAL      ##
+############################
+
+#### REMOVE SELF ####
+
+func remove_self() -> void:
+	if not multiplayer.is_server():
+		return
+	
+	unregister_defeated_enemy_state()
+	broadcast_void_removal()
+
+
+#### UNREGISTER DEFEATED ENEMY STATE ####
+
+func unregister_defeated_enemy_state() -> void:
+	if enemy_state_id.is_empty():
+		return
+	
+	var scene_handler: SceneHandler = (
+		get_tree().current_scene as SceneHandler
+	)
+	
+	if scene_handler == null:
+		return
+	
+	scene_handler.unregister_defeated_enemy(
+		enemy_state_id
+	)
+
+
+#### BROADCAST VOID REMOVAL ####
+
+func broadcast_void_removal() -> void:
+	if multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
+		apply_void_removal()
+		return
+	
+	apply_void_removal.rpc()
+
+
+#### APPLY VOID REMOVAL ####
+
+@rpc("authority", "call_local", "reliable")
+func apply_void_removal() -> void:
+	if is_queued_for_deletion():
+		return
+	
+	dead = true
+	dying = false
+	death_pending = false
+	
+	set_physics_process(false)
+	
+	detection_area.set_detection_enabled(false)
+	hurtbox.set_hurtbox_enabled(false)
+	contact_hitbox.stop_contact_damage()
+	
+	body_collision.set_deferred(
+		"disabled",
+		true
+	)
+	
+	visible = false
+	
+	call_deferred(
+		"queue_free"
+	)

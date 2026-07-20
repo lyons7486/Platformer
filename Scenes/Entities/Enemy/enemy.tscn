@@ -215,7 +215,7 @@ radius = 7.0
 size = Vector2(14, 9)
 
 [node name="Enemy" type="CharacterBody2D" unique_id=11946664]
-collision_layer = 0
+collision_layer = 8
 collision_mask = 9
 script = ExtResource("1_1bxle")
 

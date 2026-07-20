@@ -457,6 +457,23 @@ func apply_defeated_enemy_state(
 		corpse_flip_h
 	)
 
+
+#### UNREGISTER DEFEATED ENEMY ####
+
+func unregister_defeated_enemy(
+	enemy_state_id: String
+) -> void:
+	if not multiplayer.is_server():
+		return
+	
+	if enemy_state_id.is_empty():
+		return
+	
+	defeated_enemy_states.erase(
+		enemy_state_id
+	)
+
+
 ############################
 ##     PLAYER SPAWNING    ##
 ############################
