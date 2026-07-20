@@ -21,7 +21,7 @@ signal local_player_died
 
 @onready var player_sprite: AnimatedSprite2D = $PlayerSprite
 @onready var animation_player: AnimationPlayer = $AnimationPlayer
-@onready var equips: Marker2D = $Equipsr
+@onready var equips: Marker2D = $Equips
 
 @onready var body_collision: CollisionPolygon2D = (
 	$CollisionPolygon2D
@@ -125,6 +125,11 @@ var received_knockback_multiplier: float = 1.0
 
 @export var hit_animation_duration: float = 0.5
 
+@export_range(0.0, 1.0, 0.05)
+var death_knockback_multiplier: float = 0.35
+
+@export var death_horizontal_friction: float = 200.0
+
 
 ############################
 ##       COMBAT STATE     ##
@@ -133,6 +138,7 @@ var received_knockback_multiplier: float = 1.0
 var dead: bool = false
 var dying: bool = false
 var death_pending: bool = false
+var death_animation_finished: bool = false
 
 var hit_reaction_active: bool = false
 var hit_reaction_time_remaining: float = 0.0
@@ -782,9 +788,18 @@ func player_knockback_requested(
 	if dead:
 		return
 	
+	var current_knockback_multiplier: float = (
+		received_knockback_multiplier
+	)
+	
+	if death_pending:
+		current_knockback_multiplier *= (
+			death_knockback_multiplier
+		)
+	
 	var adjusted_knockback: Vector2 = (
 		knockback_velocity
-		* received_knockback_multiplier
+		* current_knockback_multiplier
 	)
 	
 	adjusted_knockback.x = clampf(
@@ -818,6 +833,7 @@ func player_died(
 		return
 	
 	death_pending = true
+	death_animation_finished = false
 	
 	controls = false
 	direction = 0.0
@@ -858,10 +874,33 @@ func begin_death_knockback() -> void:
 	hit_reaction_active = false
 	hit_reaction_time_remaining = 0.0
 	
-	player_sprite.play(&"Death")
+	broadcast_death_visuals()
 	
 	update_network_state()
+	update_network_state()
 
+#### BROADCAST DEATH VISUALS ####
+
+func broadcast_death_visuals() -> void:
+	if multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
+		apply_death_visuals()
+		return
+	
+	apply_death_visuals.rpc()
+
+
+#### APPLY DEATH VISUALS ####
+
+@rpc("authority", "call_local", "reliable", 2)
+func apply_death_visuals() -> void:
+	equips.visible = false
+	
+	animation_player.stop()
+	
+	modulate = Color.WHITE
+	player_sprite.modulate = Color.WHITE
+	
+	player_sprite.play(&"Death")
 
 #### FINISH DEATH ANIMATION ####
 
@@ -872,14 +911,16 @@ func finish_death_animation() -> void:
 	if not dying:
 		return
 	
-	broadcast_dead_body_state(
-		global_position,
-		player_sprite.flip_h
-	)
+	death_animation_finished = true
+	
+	hold_player_death_frame()
 	
 	death_timer.start(
 		death_respawn_delay
 	)
+	
+	if is_on_floor():
+		finalize_dead_body()
 
 #### BROADCAST DEAD BODY STATE ####
 
@@ -962,7 +1003,7 @@ func hold_player_death_frame() -> void:
 	if frame_count <= 0:
 		return
 	
-	player_sprite.play(&"Death")
+	player_sprite.animation = &"Death"
 	
 	player_sprite.set_frame_and_progress(
 		frame_count - 1,
@@ -1151,6 +1192,7 @@ func apply_respawn_state(
 	dead = false
 	dying = false
 	death_pending = false
+	death_animation_finished = false
 	
 	network_dead = false
 	
@@ -1224,6 +1266,7 @@ func spawn_in() -> void:
 	dead = false
 	dying = false
 	death_pending = false
+	death_animation_finished = false
 
 	network_dead = false
 
@@ -1491,6 +1534,20 @@ func control_finished() -> void:
 	
 	controls = true
 
+
+#### DEATH TIMER FINISHED ####
+
+func death_timer_finished() -> void:
+	if not is_local_player():
+		return
+	
+	perform_respawn()
+
+
+##############################
+##      DEATH ANIMATION     ##
+##############################
+
 #### PROCESS DEATH ANIMATION ####
 
 func process_death_animation(
@@ -1498,14 +1555,40 @@ func process_death_animation(
 ) -> void:
 	handle_gravity(delta)
 	
+	velocity.x = move_toward(
+		velocity.x,
+		0.0,
+		death_horizontal_friction * delta
+	)
+	
 	move_and_slide()
 	
 	update_network_state()
-
-#### DEATH TIMER FINISHED ####
-
-func death_timer_finished() -> void:
-	if not is_multiplayer_authority():
+	
+	if not death_animation_finished:
 		return
 	
-	perform_respawn()
+	if not is_on_floor():
+		return
+	
+	finalize_dead_body()
+
+#### FINALIZE DEAD BODY ####
+
+func finalize_dead_body() -> void:
+	if not is_local_player():
+		return
+	
+	if not dying:
+		return
+	
+	if not death_animation_finished:
+		return
+	
+	dying = false
+	death_animation_finished = false
+	
+	broadcast_dead_body_state(
+		global_position,
+		player_sprite.flip_h
+	)
