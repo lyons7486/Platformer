@@ -18,6 +18,7 @@ extends Hitbox
 var contact_interval: float = 0.8
 
 @export var damage_immediately_on_enter: bool = true
+@export var manual_damage_only: bool = false
 
 
 ############################
@@ -151,6 +152,9 @@ func contact_body_entered(
 	
 	overlapping_players.append(player)
 	
+	if manual_damage_only:
+		return
+	
 	if damage_immediately_on_enter:
 		damage_player(player)
 	
@@ -212,6 +216,32 @@ func damage_player(
 	
 	player.take_damage(damage_data)
 
+#### DAMAGE OVERLAPPING PLAYERS ONCE ####
+
+func damage_overlapping_players_once() -> bool:
+	if not multiplayer.is_server():
+		return false
+	
+	if not active:
+		return false
+	
+	var hit_player: bool = false
+	
+	for body: Node2D in get_overlapping_bodies():
+		if not body is PlatformPlayer:
+			continue
+		
+		var player: PlatformPlayer = (
+			body as PlatformPlayer
+		)
+		
+		if not is_instance_valid(player):
+			continue
+		
+		damage_player(player)
+		hit_player = true
+	
+	return hit_player
 
 ############################
 ##      CONTACT TIMER     ##
@@ -220,6 +250,9 @@ func damage_player(
 #### START CONTACT TIMER ####
 
 func start_contact_timer() -> void:
+	if manual_damage_only:
+		return
+	
 	if overlapping_players.is_empty():
 		return
 	

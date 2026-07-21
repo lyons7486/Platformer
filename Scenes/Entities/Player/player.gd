@@ -73,6 +73,7 @@ var respawn_position: Vector2 = Vector2.ZERO
 @export var run_multiplier: float = 1.5
 
 var direction: float = 0.0
+var run_pressed: bool = false
 
 
 ############################
@@ -254,12 +255,12 @@ func _physics_process(delta: float) -> void:
 	handle_jump()
 	handle_sprite_direction()
 	update_hit_reaction(delta)
-	handle_animation()
 	handle_gravity(delta)
 	handle_movement(delta)
 	
 	move_and_slide()
 	
+	handle_animation()
 	update_network_state()
 
 
@@ -309,8 +310,11 @@ func restore_camera_smoothing() -> void:
 
 #### GET INPUT ####
 
+#### GET INPUT ####
+
 func get_input() -> void:
 	direction = 0.0
+	run_pressed = false
 	
 	if not controls:
 		return
@@ -318,6 +322,10 @@ func get_input() -> void:
 	direction = Input.get_axis(
 		"player_left",
 		"player_right"
+	)
+	
+	run_pressed = Input.is_action_pressed(
+		"player_run"
 	)
 
 
@@ -424,8 +432,13 @@ func handle_animation() -> void:
 #### GET CURRENT ANIMATION ####
 
 func get_current_animation() -> StringName:
-	var running: bool = Input.is_action_pressed(
-		"player_run"
+	var moving_at_run_speed: bool = (
+		absf(velocity.x) > speed + 1.0
+	)
+	
+	var running: bool = (
+		run_pressed
+		or moving_at_run_speed
 	)
 	
 	if is_on_floor():
@@ -501,7 +514,7 @@ func accelerate_player(delta: float) -> void:
 	if not is_on_floor():
 		current_acceleration = air_acceleration
 	
-	if Input.is_action_pressed("player_run"):
+	if run_pressed:
 		current_speed_multiplier = run_multiplier
 	
 	var target_speed: float = (

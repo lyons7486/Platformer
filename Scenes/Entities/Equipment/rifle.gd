@@ -48,13 +48,26 @@ const BULLET_TOKEN_SCENE: PackedScene = preload(
 	Projectile.ProjectileTypes.BULLET
 )
 
-@export var fire_cooldown: float = 0.15
+@export var fire_cooldown: float = 0.2
 @export var reload_duration: float = 0.8
 
 @export var magazine_size: int = 20
-@export var starting_reserve_ammo: int = 80
+@export var starting_reserve_ammo: int = 200
 
 @export var automatic_fire: bool = true
+
+
+############################
+##     BURST SETTINGS     ##
+############################
+
+@export var burst_fire_enabled: bool = true
+
+@export_range(1, 10, 1)
+var burst_size: int = 3
+
+@export_range(0.01, 1.0, 0.01)
+var burst_interval: float = 0.10
 
 
 ############################
@@ -62,7 +75,7 @@ const BULLET_TOKEN_SCENE: PackedScene = preload(
 ############################
 
 @export_range(0.0, 45.0, 0.1)
-var bullet_spread_degrees: float = 3.0
+var bullet_spread_degrees: float = 1.0
 
 
 ############################
@@ -84,6 +97,10 @@ var ammo_tokens: Array[TextureRect] = []
 
 var can_fire: bool = true
 var fire_cooldown_timer: float = 0.0
+
+var burst_active: bool = false
+var burst_shots_remaining: int = 0
+var burst_shot_timer: float = 0.0
 
 var facing_direction: float = 1.0
 
@@ -114,14 +131,14 @@ func _physics_process(delta: float) -> void:
 	if player == null:
 		return
 	
-	update_facing_direction()
-	update_weapon_animation()
-	
 	if not player.is_local_player():
 		return
 	
-	update_fire_cooldown(delta)
 	update_reload(delta)
+	update_facing_direction()
+	update_burst_fire(delta)
+	update_fire_cooldown(delta)
+	update_weapon_animation()
 	
 	handle_reload_input()
 	handle_fire_input()
@@ -196,6 +213,15 @@ func handle_fire_input() -> void:
 	if player_is_running():
 		return
 	
+	if burst_fire_enabled:
+		if not Input.is_action_just_pressed(
+			"player_primary_action"
+		):
+			return
+		
+		try_start_burst()
+		return
+	
 	if automatic_fire:
 		if not Input.is_action_pressed(
 			"player_primary_action"
@@ -242,13 +268,20 @@ func try_fire_rifle() -> void:
 		return
 	
 	fire_rifle()
+	start_fire_cooldown()
+	
+	if current_ammo <= 0 and reserve_ammo > 0:
+		start_reload()
 
 
 #### FIRE RIFLE ####
 
 func fire_rifle() -> void:
-	can_fire = false
-	fire_cooldown_timer = fire_cooldown
+	if current_ammo <= 0:
+		return
+	
+	if scene_handler == null:
+		return
 	
 	current_ammo -= 1
 	
@@ -265,6 +298,122 @@ func fire_rifle() -> void:
 	
 	play_fire_effects()
 	update_ammo_ui()
+
+
+############################
+##      BURST FIRE        ##
+############################
+
+#### TRY START BURST ####
+
+func try_start_burst() -> void:
+	if burst_active:
+		return
+	
+	if not can_fire:
+		return
+	
+	if current_ammo <= 0:
+		handle_empty_magazine()
+		return
+	
+	if scene_handler == null:
+		return
+	
+	burst_active = true
+	
+	burst_shots_remaining = mini(
+		burst_size,
+		current_ammo
+	)
+	
+	burst_shot_timer = 0.0
+	can_fire = false
+	
+	fire_next_burst_shot()
+
+
+#### UPDATE BURST FIRE ####
+
+func update_burst_fire(
+	delta: float
+) -> void:
+	if not burst_active:
+		return
+	
+	if should_cancel_burst():
+		finish_burst()
+		return
+	
+	burst_shot_timer -= delta
+	
+	if burst_shot_timer > 0.0:
+		return
+	
+	fire_next_burst_shot()
+
+
+#### FIRE NEXT BURST SHOT ####
+
+func fire_next_burst_shot() -> void:
+	if not burst_active:
+		return
+	
+	if burst_shots_remaining <= 0:
+		finish_burst()
+		return
+	
+	if current_ammo <= 0:
+		finish_burst()
+		return
+	
+	fire_rifle()
+	
+	burst_shots_remaining -= 1
+	
+	if burst_shots_remaining <= 0:
+		finish_burst()
+		return
+	
+	if current_ammo <= 0:
+		finish_burst()
+		return
+	
+	burst_shot_timer = burst_interval
+
+
+#### SHOULD CANCEL BURST ####
+
+func should_cancel_burst() -> bool:
+	if player == null:
+		return true
+	
+	if not player.controls:
+		return true
+	
+	if reloading:
+		return true
+	
+	if player_is_running():
+		return true
+	
+	if scene_handler == null:
+		return true
+	
+	return false
+
+
+#### FINISH BURST ####
+
+func finish_burst() -> void:
+	if not burst_active:
+		return
+	
+	burst_active = false
+	burst_shots_remaining = 0
+	burst_shot_timer = 0.0
+	
+	start_fire_cooldown()
 	
 	if current_ammo <= 0 and reserve_ammo > 0:
 		start_reload()
@@ -293,8 +442,7 @@ func get_projectile_direction() -> Vector2:
 #### HANDLE EMPTY MAGAZINE ####
 
 func handle_empty_magazine() -> void:
-	can_fire = false
-	fire_cooldown_timer = fire_cooldown
+	start_fire_cooldown()
 	
 	fire_empty_sound()
 	
@@ -311,9 +459,21 @@ func fire_empty_sound() -> void:
 	empty_sound.play()
 
 
-#### FIRE COOLDOWN ####
+#### START FIRE COOLDOWN ####
 
-func update_fire_cooldown(delta: float) -> void:
+func start_fire_cooldown() -> void:
+	can_fire = false
+	fire_cooldown_timer = fire_cooldown
+
+
+#### UPDATE FIRE COOLDOWN ####
+
+func update_fire_cooldown(
+	delta: float
+) -> void:
+	if burst_active:
+		return
+	
 	if can_fire:
 		return
 	
@@ -333,6 +493,9 @@ func update_fire_cooldown(delta: float) -> void:
 #### START RELOAD ####
 
 func start_reload() -> void:
+	if burst_active:
+		return
+	
 	if reloading:
 		return
 	
@@ -346,7 +509,7 @@ func start_reload() -> void:
 	reload_timer = reload_duration
 	
 	play_reload_sound()
-	play_reload_animation.rpc(reload_duration)
+	play_weapon_animation(&"Reload")
 	update_ammo_ui()
 
 
@@ -685,13 +848,9 @@ func get_animated_sprite_duration(
 #### PLAYER IS RUNNING ####
 
 func player_is_running() -> bool:
-	if not player.is_on_floor():
-		return false
-	
-	if is_zero_approx(player.direction):
-		return false
-	
-	return Input.is_action_pressed("player_run")
+	return Input.is_action_pressed(
+		"player_run"
+	)
 
 
 ############################

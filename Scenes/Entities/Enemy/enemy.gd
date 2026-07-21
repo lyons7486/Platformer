@@ -25,6 +25,11 @@ extends CharacterBody2D
 @onready var health_component: HealthComponent = $HealthComponent
 @onready var hurtbox: Hurtbox = $Hurtbox
 
+@onready var bite_attack: Node2D = $Attacks/Bite
+
+@onready var attack_cooldown_timer: Timer = (
+	$AttackCooldownTimer
+)
 
 ############################
 ##        MOVEMENT        ##
@@ -36,7 +41,7 @@ extends CharacterBody2D
 @export var acceleration: float = 120.0
 @export var friction: float = 120.0
 
-@export var chase_stop_distance: float = 4.0
+@export var chase_stop_distance: float = 12.0
 
 var direction: float = 1.0
 
@@ -44,12 +49,37 @@ var movement_rng: RandomNumberGenerator = (
 	RandomNumberGenerator.new()
 )
 
+############################
+##   KNOCKBACK SETTINGS   ##
+############################
+
+@export var maximum_knockback_speed: float = 60.0
+@export var knockback_recovery_speed: float = 500.0
+
 
 ############################
 ##         TARGET         ##
 ############################
 
 var target_player: PlatformPlayer = null
+
+
+############################
+##     ATTACK SETTINGS    ##
+############################
+
+@export var attack_distance: float = 14.0
+@export var attack_vertical_tolerance: float = 18.0
+
+@export var attack_cooldown: float = 0.8
+
+@export var bite_hitbox_offset_x: float = 8.0
+
+@export_range(0, 20, 1)
+var attack_hit_start_frame: int = 3
+
+@export_range(0, 20, 1)
+var attack_hit_end_frame: int = 4
 
 
 ############################
@@ -71,11 +101,11 @@ var target_player: PlatformPlayer = null
 ############################
 
 @export_range(0.01, 1.0, 0.01)
-var hit_flash_duration: float = 0.15
+var hit_flash_duration: float = 0.25
 
 @export var hit_flash_color: Color = Color(
-	1.0,
-	0.15,
+	2.0,
+	0.65,
 	0.15,
 	1.0
 )
@@ -88,6 +118,7 @@ var hit_flash_duration: float = 0.15
 var default_sprite_modulate: Color = Color.WHITE
 var hit_flash_tween: Tween = null
 
+
 ############################
 ##      COMBAT STATE      ##
 ############################
@@ -96,8 +127,13 @@ var dead: bool = false
 var dying: bool = false
 var death_pending: bool = false
 
+var attacking: bool = false
+var attack_on_cooldown: bool = false
+var attack_damage_applied: bool = false
+
 var enemy_state_id: String = ""
 
+var knockback_active: bool = false
 
 ############################
 ##     NETWORK STATE      ##
@@ -123,6 +159,7 @@ func _ready() -> void:
 	
 	initialize_enemy_state_id()
 	connect_animation_signals()
+	connect_attack_signals()
 	
 	setup_combat_components()
 	connect_combat_signals()
@@ -190,6 +227,11 @@ func setup_combat_components() -> void:
 	hurtbox.set_hurtbox_enabled(
 		multiplayer.is_server()
 	)
+	
+	contact_hitbox.manual_damage_only = true
+	contact_hitbox.damage_immediately_on_enter = false
+	
+	update_bite_hitbox_direction()
 
 
 #### CONNECT COMBAT SIGNALS ####
@@ -218,6 +260,21 @@ func connect_combat_signals() -> void:
 
 
 ############################
+##      ATTACK SIGNALS    ##
+############################
+
+#### CONNECT ATTACK SIGNALS ####
+
+func connect_attack_signals() -> void:
+	if not attack_cooldown_timer.timeout.is_connected(
+		attack_cooldown_finished
+	):
+		attack_cooldown_timer.timeout.connect(
+			attack_cooldown_finished
+		)
+
+
+############################
 ##   ANIMATION SIGNALS    ##
 ############################
 
@@ -230,12 +287,25 @@ func connect_animation_signals() -> void:
 		animated_sprite.animation_finished.connect(
 			enemy_animation_finished
 		)
+	
+	if not animated_sprite.frame_changed.is_connected(
+		enemy_animation_frame_changed
+	):
+		animated_sprite.frame_changed.connect(
+			enemy_animation_frame_changed
+		)
 
 
 #### ENEMY ANIMATION FINISHED ####
 
 func enemy_animation_finished() -> void:
 	if not multiplayer.is_server():
+		return
+	
+	if attacking:
+		if animated_sprite.animation == &"Attack":
+			finish_attack()
+		
 		return
 	
 	if not dying:
@@ -245,6 +315,34 @@ func enemy_animation_finished() -> void:
 		return
 	
 	finish_death_animation()
+
+
+#### ENEMY ANIMATION FRAME CHANGED ####
+
+func enemy_animation_frame_changed() -> void:
+	if not multiplayer.is_server():
+		return
+	
+	if not attacking:
+		return
+	
+	if attack_damage_applied:
+		return
+	
+	if animated_sprite.animation != &"Attack":
+		return
+	
+	var current_frame: int = animated_sprite.frame
+	
+	if current_frame < attack_hit_start_frame:
+		return
+	
+	if current_frame > attack_hit_end_frame:
+		return
+	
+	attack_damage_applied = (
+		contact_hitbox.damage_overlapping_players_once()
+	)
 
 
 #### ENEMY DAMAGED ####
@@ -326,7 +424,17 @@ func enemy_knockback_requested(
 	if dead:
 		return
 	
-	velocity += knockback_velocity
+	var horizontal_knockback: float = clampf(
+		knockback_velocity.x,
+		-maximum_knockback_speed,
+		maximum_knockback_speed
+	)
+	
+	# Replace the previous knockback instead of adding
+	# another knockback velocity on top of it.
+	
+	velocity.x = horizontal_knockback
+	knockback_active = true
 
 
 #### ENEMY DIED ####
@@ -358,6 +466,12 @@ func enemy_died(
 func disable_enemy_combat() -> void:
 	direction = 0.0
 	target_player = null
+	
+	attacking = false
+	attack_on_cooldown = false
+	attack_damage_applied = false
+	
+	attack_cooldown_timer.stop()
 	
 	detection_area.set_detection_enabled(false)
 	hurtbox.set_hurtbox_enabled(false)
@@ -536,10 +650,25 @@ func server_process(delta: float) -> void:
 		return
 	
 	update_target_player()
-	
 	handle_gravity(delta)
-	handle_movement_guidance()
-	handle_movement(delta)
+	
+	if process_knockback(delta):
+		move_and_slide()
+		
+		handle_animation()
+		update_network_state()
+		return
+	
+	if attacking:
+		process_attack_movement(delta)
+	else:
+		try_begin_attack()
+		
+		if attacking:
+			process_attack_movement(delta)
+		else:
+			handle_movement_guidance()
+			handle_movement(delta)
 	
 	move_and_slide()
 	
@@ -564,6 +693,115 @@ func process_death_animation(
 	
 	update_network_state()
 	register_defeated_enemy_state()
+
+
+############################
+##         ATTACK         ##
+############################
+
+#### TRY BEGIN ATTACK ####
+
+func try_begin_attack() -> void:
+	if not can_begin_attack():
+		return
+	
+	begin_attack()
+
+
+#### CAN BEGIN ATTACK ####
+
+func can_begin_attack() -> bool:
+	if attacking:
+		return false
+	
+	if attack_on_cooldown:
+		return false
+	
+	if not is_on_floor():
+		return false
+	
+	if not has_valid_target():
+		return false
+	
+	var horizontal_distance: float = absf(
+		target_player.global_position.x
+		- global_position.x
+	)
+	
+	if horizontal_distance > attack_distance:
+		return false
+	
+	var vertical_distance: float = absf(
+		target_player.global_position.y
+		- global_position.y
+	)
+	
+	if vertical_distance > attack_vertical_tolerance:
+		return false
+	
+	return true
+
+
+#### BEGIN ATTACK ####
+
+func begin_attack() -> void:
+	if not has_valid_target():
+		return
+	
+	var target_direction: float = signf(
+		target_player.global_position.x
+		- global_position.x
+	)
+	
+	if not is_zero_approx(target_direction):
+		direction = target_direction
+		apply_facing_direction()
+	
+	direction = 0.0
+	velocity.x = 0.0
+	
+	attacking = true
+	attack_damage_applied = false
+	
+	update_bite_hitbox_direction()
+	
+	animated_sprite.play(&"Attack")
+
+
+#### PROCESS ATTACK MOVEMENT ####
+
+func process_attack_movement(
+	_delta: float
+) -> void:
+	direction = 0.0
+	velocity.x = 0.0
+
+
+#### FINISH ATTACK ####
+
+func finish_attack() -> void:
+	if not attacking:
+		return
+	
+	attacking = false
+	attack_damage_applied = false
+	
+	attack_on_cooldown = true
+	
+	attack_cooldown_timer.start(
+		attack_cooldown
+	)
+	
+	animated_sprite.play(&"Idle")
+
+
+#### ATTACK COOLDOWN FINISHED ####
+
+func attack_cooldown_finished() -> void:
+	if not multiplayer.is_server():
+		return
+	
+	attack_on_cooldown = false
 
 
 ############################
@@ -699,6 +937,21 @@ func apply_facing_direction() -> void:
 		animated_sprite.flip_h = true
 	elif direction > 0.0:
 		animated_sprite.flip_h = false
+	
+	update_bite_hitbox_direction()
+
+
+#### UPDATE BITE HITBOX DIRECTION ####
+
+func update_bite_hitbox_direction() -> void:
+	var horizontal_offset: float = absf(
+		bite_hitbox_offset_x
+	)
+	
+	if animated_sprite.flip_h:
+		horizontal_offset *= -1.0
+	
+	bite_attack.position.x = horizontal_offset
 
 
 ############################
@@ -757,6 +1010,31 @@ func decelerate_enemy(delta: float) -> void:
 
 
 ############################
+##       KNOCKBACK        ##
+############################
+
+#### PROCESS KNOCKBACK ####
+
+func process_knockback(
+	delta: float
+) -> bool:
+	if not knockback_active:
+		return false
+	
+	velocity.x = move_toward(
+		velocity.x,
+		0.0,
+		knockback_recovery_speed * delta
+	)
+	
+	if absf(velocity.x) <= 1.0:
+		velocity.x = 0.0
+		knockback_active = false
+	
+	return true
+
+
+############################
 ##      CLIENT ENEMY      ##
 ############################
 
@@ -812,6 +1090,16 @@ func update_network_state() -> void:
 #### HANDLE ANIMATION ####
 
 func handle_animation() -> void:
+	if attacking:
+		if animated_sprite.animation != &"Attack":
+			animated_sprite.play(&"Attack")
+		
+		return
+	
+	if knockback_active:
+		animated_sprite.play(&"Idle")
+		return
+	
 	if absf(velocity.x) > 1.0:
 		animated_sprite.play(&"Walk")
 	else:

@@ -4,6 +4,13 @@
 [ext_resource type="Texture2D" uid="uid://dvbb3gprqmayu" path="res://Assets/Textures/Equipment/projectile_rifle.png" id="2_wsxtw"]
 [ext_resource type="Script" uid="uid://p4udp7yees1e" path="res://Scripts/Combat/hitbox.gd" id="3_wsxtw"]
 
+[sub_resource type="Curve" id="Curve_wsxtw"]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="Gradient" id="Gradient_wsxtw"]
+colors = PackedColorArray(0.54863036, 0.54863, 0.5486301, 0, 0.7738657, 0.6726782, 0.57979053, 1)
+
 [sub_resource type="AtlasTexture" id="AtlasTexture_qjv3w"]
 atlas = ExtResource("2_wsxtw")
 region = Rect2(0, 0, 16, 16)
@@ -120,13 +127,22 @@ properties/2/spawn = true
 properties/2/replication_mode = 2
 
 [node name="Projectile" type="Area2D" unique_id=235986819]
-collision_layer = 2
+collision_layer = 0
+collision_mask = 0
 script = ExtResource("1_yik15")
 
 [node name="Visuals" type="Node2D" parent="." unique_id=777272662]
 
+[node name="BulletTrail" type="Line2D" parent="Visuals" unique_id=14067120]
+show_behind_parent = true
+width = 2.0
+width_curve = SubResource("Curve_wsxtw")
+gradient = SubResource("Gradient_wsxtw")
+end_cap_mode = 2
+
 [node name="BulletSprite" type="AnimatedSprite2D" parent="Visuals" unique_id=2012825682]
 sprite_frames = SubResource("SpriteFrames_hqxv8")
+animation = &"hit"
 
 [node name="PlasmaSprite" type="AnimatedSprite2D" parent="Visuals" unique_id=1750700445]
 sprite_frames = SubResource("SpriteFrames_oxmic")
@@ -138,6 +154,8 @@ sprite_frames = SubResource("SpriteFrames_yh63k")
 sprite_frames = SubResource("SpriteFrames_jrsdr")
 
 [node name="CollisionShapes" type="Area2D" parent="." unique_id=595683575]
+collision_layer = 128
+collision_mask = 65
 script = ExtResource("3_wsxtw")
 active_on_ready = false
 deactivate_after_successful_hit = true
