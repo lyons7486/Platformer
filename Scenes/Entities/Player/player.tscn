@@ -362,6 +362,8 @@ position_smoothing_enabled = true
 
 [node name="HealthComponent" type="Node" parent="." unique_id=1596130450]
 script = ExtResource("4_fcpig")
+maximum_health = 50.0
+starting_health = 50.0
 
 [node name="Hurtbox" parent="." unique_id=1428053106 instance=ExtResource("4_22fhq")]
 

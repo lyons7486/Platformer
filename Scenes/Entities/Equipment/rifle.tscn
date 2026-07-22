@@ -195,18 +195,18 @@ properties/1/replication_mode = 1
 script = ExtResource("1_sshrm")
 
 [node name="AimPivot" type="Marker2D" parent="." unique_id=1776022668]
-position = Vector2(0, 8)
+position = Vector2(-2, 8)
 
 [node name="WeaponSprite" type="AnimatedSprite2D" parent="AimPivot" unique_id=1876127351]
-position = Vector2(0, -8)
+position = Vector2(2, -7)
 sprite_frames = SubResource("SpriteFrames_4ffj5")
 animation = &"Fire"
 
 [node name="BulletSpawnPoint" type="Marker2D" parent="AimPivot" unique_id=1817836353]
-position = Vector2(11, -1)
+position = Vector2(13, 0)
 
 [node name="NuzzleFlash" type="AnimatedSprite2D" parent="AimPivot" unique_id=1016067741]
-position = Vector2(19, -1)
+position = Vector2(21, 0)
 sprite_frames = SubResource("SpriteFrames_hqxv8")
 animation = &"Flash"
 frame = 5

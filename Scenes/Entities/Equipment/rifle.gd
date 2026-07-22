@@ -556,6 +556,8 @@ func start_reload() -> void:
 func play_reload_animation(
 	target_duration: float
 ) -> void:
+	clear_aim_state()
+	
 	play_timed_weapon_animation(
 		&"Reload",
 		target_duration
@@ -702,6 +704,22 @@ func muzzle_flash_finished() -> void:
 
 
 ############################
+##       AIM CHECKS       ##
+############################
+
+#### CAN AIM ####
+
+func can_aim() -> bool:
+	if not super.can_aim():
+		return false
+	
+	if reloading:
+		return false
+	
+	return true
+
+
+############################
 ##    AIM POSITIONING     ##
 ############################
 
@@ -717,7 +735,12 @@ func update_aim_pivot_position(
 		aim_pivot_rest_position
 	)
 	
-	if is_aiming():
+	var use_aiming_position: bool = (
+		is_aiming()
+		and not weapon_is_reloading_visually()
+	)
+	
+	if use_aiming_position:
 		target_position += aiming_pivot_offset
 	
 	var movement_weight: float = clampf(
@@ -742,7 +765,10 @@ func apply_aim_visuals() -> void:
 	if aim_pivot == null:
 		return
 	
-	aim_pivot.rotation = get_visual_aim_rotation()
+	if weapon_is_reloading_visually():
+		aim_pivot.rotation = 0.0
+	else:
+		aim_pivot.rotation = get_visual_aim_rotation()
 	
 	var facing_left: bool = (
 		get_facing_direction() < 0.0
@@ -784,6 +810,15 @@ func get_aim_origin_global_position() -> Vector2:
 ############################
 ##     WEAPON ANIMATION   ##
 ############################
+
+#### WEAPON IS RELOADING VISUALLY ####
+
+func weapon_is_reloading_visually() -> bool:
+	if weapon_sprite.animation != &"Reload":
+		return false
+	
+	return weapon_sprite.is_playing()
+
 
 #### UPDATE WEAPON ANIMATION ####
 
