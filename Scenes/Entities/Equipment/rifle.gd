@@ -113,6 +113,14 @@ var burst_shot_timer: float = 0.0
 
 
 ############################
+##   FIRE ANIMATION       ##
+############################
+
+@export_range(0.1, 1.0, 0.05)
+var fire_animation_interval_ratio: float = 0.9
+
+
+############################
 ##    AIM POSITIONING     ##
 ############################
 
@@ -613,9 +621,19 @@ func finish_reload() -> void:
 #### PLAY FIRE EFFECTS ####
 
 func play_fire_effects() -> void:
-	play_fire_animation.rpc(fire_cooldown)
+	var effect_duration: float = (
+		get_fire_effect_duration()
+	)
+	
+	play_fire_animation.rpc(
+		effect_duration
+	)
+	
 	play_fire_sound()
-	play_muzzle_flash.rpc(fire_cooldown)
+	
+	play_muzzle_flash.rpc(
+		effect_duration
+	)
 
 
 #### PLAY FIRE ANIMATION ####
@@ -701,6 +719,33 @@ func play_fire_sound() -> void:
 func muzzle_flash_finished() -> void:
 	muzzle_flash.visible = false
 	muzzle_flash.speed_scale = 1.0
+
+
+#### GET CURRENT SHOT INTERVAL ####
+
+func get_current_shot_interval() -> float:
+	if burst_active:
+		return burst_interval
+	
+	return fire_cooldown
+
+
+#### GET FIRE EFFECT DURATION ####
+
+func get_fire_effect_duration() -> float:
+	var shot_interval: float = (
+		get_current_shot_interval()
+	)
+	
+	var effect_duration: float = (
+		shot_interval
+		* fire_animation_interval_ratio
+	)
+	
+	return maxf(
+		effect_duration,
+		0.01
+	)
 
 
 ############################

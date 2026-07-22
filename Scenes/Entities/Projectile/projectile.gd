@@ -105,7 +105,10 @@ var impact_animation_finished: bool = false
 ##      IMPACT STATE      ##
 ############################
 
+@export var network_cleanup_delay: float = 0.5
+
 var impact_active: bool = false
+var cleanup_started: bool = false
 
 
 ############################
@@ -118,6 +121,9 @@ var impact_active: bool = false
 @export var network_projectile_type: int = (
 	ProjectileTypes.BULLET
 )
+
+@export var network_bullet_trail_length: float = 0.0
+@export var network_bullet_trail_visible: bool = false
 
 
 ############################
@@ -484,6 +490,21 @@ func finish_projectile_impact() -> void:
 	if not multiplayer.is_server():
 		return
 	
+	if cleanup_started:
+		return
+	
+	if is_queued_for_deletion():
+		return
+	
+	cleanup_started = true
+	
+	await get_tree().create_timer(
+		network_cleanup_delay
+	).timeout
+	
+	if not is_inside_tree():
+		return
+	
 	if is_queued_for_deletion():
 		return
 	
@@ -516,6 +537,9 @@ func setup_bullet_trail() -> void:
 	)
 	
 	update_bullet_trail_points()
+	
+	if multiplayer.is_server():
+		update_network_bullet_trail_state()
 
 
 #### UPDATE BULLET TRAIL ####
@@ -585,6 +609,39 @@ func update_bullet_trail_points() -> void:
 
 
 ############################
+##   TRAIL NETWORK STATE  ##
+############################
+
+#### UPDATE NETWORK BULLET TRAIL STATE ####
+
+func update_network_bullet_trail_state() -> void:
+	network_bullet_trail_length = (
+		bullet_trail_length
+	)
+	
+	network_bullet_trail_visible = (
+		bullet_trail.visible
+	)
+
+
+#### APPLY NETWORK BULLET TRAIL STATE ####
+
+func apply_network_bullet_trail_state() -> void:
+	if projectile_type != ProjectileTypes.BULLET:
+		return
+	
+	bullet_trail_length = (
+		network_bullet_trail_length
+	)
+	
+	bullet_trail.visible = (
+		network_bullet_trail_visible
+	)
+	
+	update_bullet_trail_points()
+
+
+############################
 ##       LIFECYCLE        ##
 ############################
 
@@ -635,7 +692,12 @@ func connect_signals() -> void:
 #### PROCESS ####
 
 func _process(delta: float) -> void:
-	update_bullet_trail(delta)
+	if multiplayer.is_server():
+		update_bullet_trail(delta)
+		update_network_bullet_trail_state()
+		return
+	
+	apply_network_bullet_trail_state()
 
 
 #### PHYSICS PROCESS ####
