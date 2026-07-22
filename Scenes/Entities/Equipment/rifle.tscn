@@ -183,6 +183,14 @@ animations = [{
 "speed": 24.0
 }]
 
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_f7l6i"]
+properties/0/path = NodePath(".:network_aiming")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+properties/1/path = NodePath(".:network_aim_direction")
+properties/1/spawn = true
+properties/1/replication_mode = 1
+
 [node name="Rifle" type="Node2D" unique_id=1773224955]
 script = ExtResource("1_sshrm")
 
@@ -236,3 +244,6 @@ text = "20"
 [node name="FireCooldown" type="Timer" parent="." unique_id=1883623163]
 
 [node name="ReloadTimer" type="Timer" parent="." unique_id=1860573487]
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=609600027]
+replication_config = SubResource("SceneReplicationConfig_f7l6i")

@@ -25,7 +25,6 @@ Stationary projectile enemy
 
 TO DO:
 
--let player body lay there at end of animation, then it only disappears right before respawing the player
 -Hitting enemies causes them to chase, they stop chasing after not sensing them after a short time. ex. sense distance is x lose track distance is x*1.5, also consider LOS if enemy hasnt seen player after set time chase is disabled.
 -enemy and player color loses saturation as they lose health, down to like maybe 20%, for visual health rep
 

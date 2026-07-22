@@ -60,6 +60,13 @@ var respawn_position: Vector2 = Vector2.ZERO
 
 
 ############################
+##    EQUIPPED WEAPON     ##
+############################
+
+var active_aimable_weapon: AimableWeapon = null
+
+
+############################
 ##        MOVEMENT        ##
 ############################
 
@@ -239,6 +246,7 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	if not is_local_player():
 		update_remote_player(delta)
+		update_active_weapon_aim()
 		return
 	
 	if dead:
@@ -251,6 +259,7 @@ func _physics_process(delta: float) -> void:
 		return
 	
 	get_input()
+	update_active_weapon_aim()
 	update_coyote_time(delta)
 	handle_jump()
 	handle_sprite_direction()
@@ -405,6 +414,14 @@ func perform_double_jump() -> void:
 #### HANDLE SPRITE DIRECTION ####
 
 func handle_sprite_direction() -> void:
+	if is_weapon_aiming():
+		player_sprite.flip_h = (
+			get_weapon_facing_direction()
+			< 0.0
+		)
+		
+		return
+	
 	if direction < 0.0:
 		player_sprite.flip_h = true
 	elif direction > 0.0:
@@ -437,8 +454,11 @@ func get_current_animation() -> StringName:
 	)
 	
 	var running: bool = (
-		run_pressed
-		or moving_at_run_speed
+		not is_weapon_aiming()
+		and (
+			run_pressed
+			or moving_at_run_speed
+		)
 	)
 	
 	if is_on_floor():
@@ -514,7 +534,11 @@ func accelerate_player(delta: float) -> void:
 	if not is_on_floor():
 		current_acceleration = air_acceleration
 	
-	if run_pressed:
+	if is_weapon_aiming():
+		current_speed_multiplier = (
+			get_weapon_movement_multiplier()
+		)
+	elif run_pressed:
 		current_speed_multiplier = run_multiplier
 	
 	var target_speed: float = (
@@ -631,6 +655,91 @@ func player_sprite_animation_finished() -> void:
 		return
 	
 	finish_death_animation()
+
+
+############################
+##      WEAPON AIM        ##
+############################
+
+#### REGISTER AIMABLE WEAPON ####
+
+func register_aimable_weapon(
+	weapon: AimableWeapon
+) -> void:
+	active_aimable_weapon = weapon
+
+
+#### UPDATE ACTIVE WEAPON AIM ####
+
+func update_active_weapon_aim() -> void:
+	if active_aimable_weapon == null:
+		return
+	
+	if not is_instance_valid(
+		active_aimable_weapon
+	):
+		active_aimable_weapon = null
+		return
+	
+	active_aimable_weapon.update_aim_state()
+	
+	if active_aimable_weapon.is_aiming():
+		run_pressed = false
+
+
+#### CLEAR ACTIVE WEAPON AIM ####
+
+func clear_active_weapon_aim() -> void:
+	if active_aimable_weapon == null:
+		return
+	
+	if not is_instance_valid(
+		active_aimable_weapon
+	):
+		active_aimable_weapon = null
+		return
+	
+	active_aimable_weapon.clear_aim_state()
+
+
+#### IS WEAPON AIMING ####
+
+func is_weapon_aiming() -> bool:
+	if active_aimable_weapon == null:
+		return false
+	
+	if not is_instance_valid(
+		active_aimable_weapon
+	):
+		return false
+	
+	return active_aimable_weapon.is_aiming()
+
+
+#### GET WEAPON FACING DIRECTION ####
+
+func get_weapon_facing_direction() -> float:
+	if active_aimable_weapon == null:
+		if player_sprite.flip_h:
+			return -1.0
+		
+		return 1.0
+	
+	return active_aimable_weapon.get_facing_direction()
+
+
+#### GET WEAPON MOVEMENT MULTIPLIER ####
+
+func get_weapon_movement_multiplier() -> float:
+	if active_aimable_weapon == null:
+		return 1.0
+	
+	return (
+		active_aimable_weapon
+		.get_aim_movement_multiplier(
+			direction
+		)
+	)
 
 
 ############################
@@ -845,6 +954,8 @@ func player_died(
 	if dead or dying or death_pending:
 		return
 	
+	clear_active_weapon_aim()
+	
 	death_pending = true
 	death_animation_finished = false
 	
@@ -963,6 +1074,9 @@ func apply_dead_body_state(
 ) -> void:
 	dead = true
 	dying = false
+	
+	clear_active_weapon_aim()
+	
 	death_pending = false
 	
 	controls = false
@@ -1204,6 +1318,9 @@ func apply_respawn_state(
 ) -> void:
 	dead = false
 	dying = false
+	
+	clear_active_weapon_aim()
+	
 	death_pending = false
 	death_animation_finished = false
 	
@@ -1275,6 +1392,8 @@ func apply_respawn_position(
 func spawn_in() -> void:
 	if not is_multiplayer_authority():
 		return
+	
+	clear_active_weapon_aim()
 	
 	dead = false
 	dying = false

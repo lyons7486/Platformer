@@ -1,6 +1,6 @@
 class_name PlayerRifle
 
-extends Node2D
+extends AimableWeapon
 
 
 ############################
@@ -102,14 +102,11 @@ var burst_active: bool = false
 var burst_shots_remaining: int = 0
 var burst_shot_timer: float = 0.0
 
-var facing_direction: float = 1.0
-
 
 ############################
 ##       REFERENCES       ##
 ############################
 
-var player: PlatformPlayer
 var scene_handler: SceneHandler
 
 
@@ -131,14 +128,14 @@ func _physics_process(delta: float) -> void:
 	if player == null:
 		return
 	
+	update_weapon_animation()
+	
 	if not player.is_local_player():
 		return
 	
 	update_reload(delta)
-	update_facing_direction()
 	update_burst_fire(delta)
 	update_fire_cooldown(delta)
-	update_weapon_animation()
 	
 	handle_reload_input()
 	handle_fire_input()
@@ -151,9 +148,19 @@ func _physics_process(delta: float) -> void:
 #### GET REFERENCES ####
 
 func get_references() -> void:
-	player = get_parent().get_parent() as PlatformPlayer
+	var owner_player: PlatformPlayer = (
+		get_parent().get_parent()
+		as PlatformPlayer
+	)
 	
-	scene_handler = get_tree().current_scene as SceneHandler
+	setup_aimable_weapon(
+		owner_player
+	)
+	
+	scene_handler = (
+		get_tree().current_scene
+		as SceneHandler
+	)
 	
 	if scene_handler != null:
 		return
@@ -422,9 +429,8 @@ func finish_burst() -> void:
 #### GET PROJECTILE DIRECTION ####
 
 func get_projectile_direction() -> Vector2:
-	var base_direction: Vector2 = Vector2(
-		facing_direction,
-		0.0
+	var base_direction: Vector2 = (
+		get_aim_direction()
 	)
 	
 	var spread_angle: float = deg_to_rad(
@@ -665,39 +671,39 @@ func muzzle_flash_finished() -> void:
 
 
 ############################
-##    FACING DIRECTION    ##
+##       AIM VISUALS      ##
 ############################
 
-#### UPDATE FACING DIRECTION ####
+#### APPLY AIM VISUALS ####
 
-func update_facing_direction() -> void:
-	if player.player_sprite.flip_h:
-		facing_direction = -1.0
-	else:
-		facing_direction = 1.0
+func apply_aim_visuals() -> void:
+	rotation = get_visual_aim_rotation()
 	
-	weapon_sprite.flip_h = facing_direction < 0.0
-	muzzle_flash.flip_h = facing_direction < 0.0
+	var facing_left: bool = (
+		get_facing_direction() < 0.0
+	)
 	
-	position_bullet_spawn_point()
-	position_muzzle_flash()
+	weapon_sprite.flip_h = facing_left
+	muzzle_flash.flip_h = facing_left
+	
+	position_rifle_markers()
 
 
-#### POSITION BULLET SPAWN POINT ####
+#### POSITION RIFLE MARKERS ####
 
-func position_bullet_spawn_point() -> void:
+func position_rifle_markers() -> void:
+	var horizontal_direction: float = (
+		get_facing_direction()
+	)
+	
 	bullet_spawn_point.position.x = (
 		absf(bullet_spawn_point.position.x)
-		* facing_direction
+		* horizontal_direction
 	)
-
-
-#### POSITION MUZZLE FLASH ####
-
-func position_muzzle_flash() -> void:
+	
 	muzzle_flash.position.x = (
 		absf(muzzle_flash.position.x)
-		* facing_direction
+		* horizontal_direction
 	)
 
 
@@ -848,9 +854,10 @@ func get_animated_sprite_duration(
 #### PLAYER IS RUNNING ####
 
 func player_is_running() -> bool:
-	return Input.is_action_pressed(
-		"player_run"
-	)
+	if is_aiming():
+		return false
+	
+	return player.run_pressed
 
 
 ############################
