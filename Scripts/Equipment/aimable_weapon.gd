@@ -107,7 +107,7 @@ func update_local_aim_state() -> void:
 	
 	var mouse_offset: Vector2 = (
 		get_global_mouse_position()
-		- global_position
+		- get_aim_origin_global_position()
 	)
 	
 	if mouse_offset.is_zero_approx():
@@ -123,6 +123,12 @@ func update_local_aim_state() -> void:
 	)
 	
 	update_network_aim_state()
+
+
+#### GET AIM ORIGIN GLOBAL POSITION ####
+
+func get_aim_origin_global_position() -> Vector2:
+	return global_position
 
 
 #### APPLY NETWORK AIM STATE ####
@@ -201,10 +207,16 @@ func get_clamped_aim_direction(
 
 func reset_aim_direction() -> void:
 	if player != null:
-		if player.player_sprite.flip_h:
-			facing_direction = -1.0
-		else:
-			facing_direction = 1.0
+		var player_sprite: AnimatedSprite2D = (
+			player.get_node_or_null("PlayerSprite")
+			as AnimatedSprite2D
+		)
+		
+		if player_sprite != null:
+			if player_sprite.flip_h:
+				facing_direction = -1.0
+			else:
+				facing_direction = 1.0
 	
 	aim_direction = Vector2(
 		facing_direction,

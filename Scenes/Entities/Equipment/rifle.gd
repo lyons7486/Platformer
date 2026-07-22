@@ -16,10 +16,19 @@ const BULLET_TOKEN_SCENE: PackedScene = preload(
 ##     NODE REFERENCES    ##
 ############################
 
-@onready var weapon_sprite: AnimatedSprite2D = $WeaponSprite
-@onready var bullet_spawn_point: Marker2D = $BulletSpawnPoint
+@onready var aim_pivot: Marker2D = $AimPivot
 
-@onready var muzzle_flash: AnimatedSprite2D = $NuzzleFlash
+@onready var weapon_sprite: AnimatedSprite2D = (
+	$AimPivot/WeaponSprite
+)
+
+@onready var bullet_spawn_point: Marker2D = (
+	$AimPivot/BulletSpawnPoint
+)
+
+@onready var muzzle_flash: AnimatedSprite2D = (
+	$AimPivot/NuzzleFlash
+)
 
 @onready var fire_sound: AudioStreamPlayer2D = $FireSound
 @onready var empty_sound: AudioStreamPlayer2D = $EmptySound
@@ -104,6 +113,25 @@ var burst_shot_timer: float = 0.0
 
 
 ############################
+##    AIM POSITIONING     ##
+############################
+
+@export var aiming_pivot_offset: Vector2 = Vector2(
+	0.0,
+	-2.0
+)
+
+@export var aim_position_speed: float = 20.0
+
+
+############################
+##   AIM POSITION STATE   ##
+############################
+
+var aim_pivot_rest_position: Vector2 = Vector2.ZERO
+
+
+############################
 ##       REFERENCES       ##
 ############################
 
@@ -117,6 +145,8 @@ var scene_handler: SceneHandler
 #### READY ####
 
 func _ready() -> void:
+	aim_pivot_rest_position = aim_pivot.position
+	
 	get_references()
 	setup_rifle()
 	connect_animation_signals()
@@ -128,6 +158,7 @@ func _physics_process(delta: float) -> void:
 	if player == null:
 		return
 	
+	update_aim_pivot_position(delta)
 	update_weapon_animation()
 	
 	if not player.is_local_player():
@@ -515,7 +546,7 @@ func start_reload() -> void:
 	reload_timer = reload_duration
 	
 	play_reload_sound()
-	play_weapon_animation(&"Reload")
+	play_reload_animation.rpc(reload_duration)
 	update_ammo_ui()
 
 
@@ -671,13 +702,47 @@ func muzzle_flash_finished() -> void:
 
 
 ############################
+##    AIM POSITIONING     ##
+############################
+
+#### UPDATE AIM PIVOT POSITION ####
+
+func update_aim_pivot_position(
+	delta: float
+) -> void:
+	if aim_pivot == null:
+		return
+	
+	var target_position: Vector2 = (
+		aim_pivot_rest_position
+	)
+	
+	if is_aiming():
+		target_position += aiming_pivot_offset
+	
+	var movement_weight: float = clampf(
+		aim_position_speed * delta,
+		0.0,
+		1.0
+	)
+	
+	aim_pivot.position = aim_pivot.position.lerp(
+		target_position,
+		movement_weight
+	)
+
+
+############################
 ##       AIM VISUALS      ##
 ############################
 
 #### APPLY AIM VISUALS ####
 
 func apply_aim_visuals() -> void:
-	rotation = get_visual_aim_rotation()
+	if aim_pivot == null:
+		return
+	
+	aim_pivot.rotation = get_visual_aim_rotation()
 	
 	var facing_left: bool = (
 		get_facing_direction() < 0.0
@@ -705,6 +770,15 @@ func position_rifle_markers() -> void:
 		absf(muzzle_flash.position.x)
 		* horizontal_direction
 	)
+
+
+#### GET AIM ORIGIN GLOBAL POSITION ####
+
+func get_aim_origin_global_position() -> Vector2:
+	if aim_pivot == null:
+		return global_position
+	
+	return aim_pivot.global_position
 
 
 ############################

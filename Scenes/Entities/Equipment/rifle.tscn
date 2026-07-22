@@ -194,15 +194,19 @@ properties/1/replication_mode = 1
 [node name="Rifle" type="Node2D" unique_id=1773224955]
 script = ExtResource("1_sshrm")
 
-[node name="WeaponSprite" type="AnimatedSprite2D" parent="." unique_id=1876127351]
+[node name="AimPivot" type="Marker2D" parent="." unique_id=1776022668]
+position = Vector2(0, 8)
+
+[node name="WeaponSprite" type="AnimatedSprite2D" parent="AimPivot" unique_id=1876127351]
+position = Vector2(0, -8)
 sprite_frames = SubResource("SpriteFrames_4ffj5")
 animation = &"Fire"
 
-[node name="BulletSpawnPoint" type="Marker2D" parent="." unique_id=1817836353]
-position = Vector2(8, 8)
+[node name="BulletSpawnPoint" type="Marker2D" parent="AimPivot" unique_id=1817836353]
+position = Vector2(11, -1)
 
-[node name="NuzzleFlash" type="AnimatedSprite2D" parent="." unique_id=1016067741]
-position = Vector2(19, 7)
+[node name="NuzzleFlash" type="AnimatedSprite2D" parent="AimPivot" unique_id=1016067741]
+position = Vector2(19, -1)
 sprite_frames = SubResource("SpriteFrames_hqxv8")
 animation = &"Flash"
 frame = 5
@@ -220,6 +224,8 @@ frame_progress = 1.0
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_top = -1.0
+offset_bottom = -1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2

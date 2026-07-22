@@ -31,3 +31,5 @@ TO DO:
 Bugs:
 Gun hflip not working on join player
 Gun reload animation not playing on join player
+bullet trail doesn work well on joining players screen, starts too long almost its max it looks like
+when reloading during aiming it needs to go back to level so the reload looks right.
