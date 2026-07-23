@@ -33,6 +33,10 @@ func respawn(body: Node) -> void:
 	if not multiplayer.is_server():
 		return
 	
+	if body.has_method("respawn_from_void"):
+		body.respawn_from_void()
+		return
+	
 	if body.has_method("respawn"):
 		body.respawn()
 		return

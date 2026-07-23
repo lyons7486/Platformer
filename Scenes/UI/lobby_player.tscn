@@ -1,0 +1,125 @@
+[gd_scene format=3 uid="uid://dp6rjhlggcbyu"]
+
+[ext_resource type="PackedScene" uid="uid://het7ja6s1r3n" path="res://Scenes/UI/default_box.tscn" id="1_6cmxc"]
+[ext_resource type="PackedScene" uid="uid://bv1jdnjykdkgn" path="res://Scenes/UI/class_button.tscn" id="2_p3exu"]
+[ext_resource type="Texture2D" uid="uid://cgaatailn0lg4" path="res://Assets/UI/Characters/Game_Start_Button_Normal.png" id="7_7ov2y"]
+[ext_resource type="Texture2D" uid="uid://cwmjulf1ionvo" path="res://Assets/UI/Characters/Game_Start_Button_Pressed.png" id="8_6cmxc"]
+[ext_resource type="Texture2D" uid="uid://v7gf2ktostct" path="res://Assets/UI/Characters/Player_Ready_Button_Normal.png" id="8_8rx10"]
+[ext_resource type="Texture2D" uid="uid://c52e4tko73lsn" path="res://Assets/UI/Characters/Game_Start_Button_Hover.png" id="9_rhxvh"]
+[ext_resource type="Texture2D" uid="uid://dqyikil3paowf" path="res://Assets/UI/Characters/Player_Ready_Button_Pressed.png" id="9_s2vtb"]
+[ext_resource type="Texture2D" uid="uid://cevyp0wk0v5j4" path="res://Assets/UI/Characters/Game_Start_Button_Disabled.png" id="10_5kvph"]
+[ext_resource type="Texture2D" uid="uid://dcn7wu65mdqm6" path="res://Assets/UI/Characters/Player_Ready_Button_Hover.png" id="10_bgoyg"]
+[ext_resource type="Texture2D" uid="uid://qs26v6ucts53" path="res://Assets/UI/Characters/Player_Ready_Button_Disabled.png" id="11_ahqy0"]
+
+[node name="LobbyPlayer" type="VBoxContainer" unique_id=1172678235]
+theme_override_constants/separation = 0
+
+[node name="DefaultBox" parent="." unique_id=1787326871 instance=ExtResource("1_6cmxc")]
+layout_mode = 2
+
+[node name="Margin" parent="DefaultBox" index="1" unique_id=1819682902]
+theme_override_constants/margin_left = 3
+theme_override_constants/margin_top = 3
+theme_override_constants/margin_right = 3
+theme_override_constants/margin_bottom = 3
+
+[node name="VBox" type="VBoxContainer" parent="DefaultBox/Margin" index="0" unique_id=911918645]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="NameLabel" type="Label" parent="DefaultBox/Margin/VBox" unique_id=1446649539]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "PLAYER 1"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="NameInput" type="LineEdit" parent="DefaultBox/Margin/VBox" unique_id=1790293542]
+layout_mode = 2
+text = "Player1"
+placeholder_text = "Player Name"
+alignment = 1
+
+[node name="SpacerTop" type="Container" parent="DefaultBox/Margin/VBox" unique_id=2001639960]
+custom_minimum_size = Vector2(0, 5)
+layout_mode = 2
+
+[node name="ClassLabel" type="Label" parent="DefaultBox/Margin/VBox" unique_id=1316021446]
+layout_mode = 2
+theme_override_font_sizes/font_size = 9
+text = "CHOOSE CLASS"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ClassGrid" type="GridContainer" parent="DefaultBox/Margin/VBox" unique_id=546292112]
+layout_mode = 2
+theme_override_constants/h_separation = 1
+theme_override_constants/v_separation = 1
+columns = 2
+
+[node name="GunnerClassButton" parent="DefaultBox/Margin/VBox/ClassGrid" unique_id=2041608098 instance=ExtResource("2_p3exu")]
+layout_mode = 2
+character_class = "gunner"
+
+[node name="GunnerClassButton2" parent="DefaultBox/Margin/VBox/ClassGrid" unique_id=173418044 instance=ExtResource("2_p3exu")]
+layout_mode = 2
+disabled = true
+
+[node name="GunnerClassButton3" parent="DefaultBox/Margin/VBox/ClassGrid" unique_id=617219537 instance=ExtResource("2_p3exu")]
+layout_mode = 2
+disabled = true
+
+[node name="GunnerClassButton4" parent="DefaultBox/Margin/VBox/ClassGrid" unique_id=990342222 instance=ExtResource("2_p3exu")]
+layout_mode = 2
+disabled = true
+
+[node name="GunnerClassButton5" parent="DefaultBox/Margin/VBox/ClassGrid" unique_id=454142801 instance=ExtResource("2_p3exu")]
+layout_mode = 2
+disabled = true
+
+[node name="GunnerClassButton6" parent="DefaultBox/Margin/VBox/ClassGrid" unique_id=1695487337 instance=ExtResource("2_p3exu")]
+layout_mode = 2
+disabled = true
+
+[node name="GunnerClassButton7" parent="DefaultBox/Margin/VBox/ClassGrid" unique_id=1195912568 instance=ExtResource("2_p3exu")]
+layout_mode = 2
+disabled = true
+
+[node name="GunnerClassButton8" parent="DefaultBox/Margin/VBox/ClassGrid" unique_id=1016815723 instance=ExtResource("2_p3exu")]
+layout_mode = 2
+disabled = true
+
+[node name="SpacerMid" type="Container" parent="DefaultBox/Margin/VBox" unique_id=1721208066]
+custom_minimum_size = Vector2(0, 3)
+layout_mode = 2
+
+[node name="ReadyButton" type="TextureButton" parent="DefaultBox/Margin/VBox" unique_id=270681016]
+layout_mode = 2
+disabled = true
+toggle_mode = true
+texture_normal = ExtResource("8_8rx10")
+texture_pressed = ExtResource("9_s2vtb")
+texture_hover = ExtResource("10_bgoyg")
+texture_disabled = ExtResource("11_ahqy0")
+
+[node name="StartButton" type="TextureButton" parent="DefaultBox/Margin/VBox/ReadyButton" unique_id=2010307076]
+visible = false
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+texture_normal = ExtResource("7_7ov2y")
+texture_pressed = ExtResource("8_6cmxc")
+texture_hover = ExtResource("9_rhxvh")
+texture_disabled = ExtResource("10_5kvph")
+
+[node name="SpacerBottom" type="Container" parent="DefaultBox/Margin/VBox" unique_id=1734444464]
+custom_minimum_size = Vector2(0, 2)
+layout_mode = 2
+
+[node name="PlayerStatusLabel" type="Label" parent="." unique_id=1881086241]
+layout_mode = 2
+text = "Getting Ready"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[editable path="DefaultBox"]

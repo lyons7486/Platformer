@@ -1,0 +1,86 @@
+[gd_scene format=3 uid="uid://bv1jdnjykdkgn"]
+
+[ext_resource type="Texture2D" uid="uid://btaxyokd2045o" path="res://Assets/UI/Characters/Class_Button_Normal.png" id="1_aocjr"]
+[ext_resource type="Texture2D" uid="uid://bqgrmj333o881" path="res://Assets/UI/Characters/Class_Button_Pressed.png" id="2_1yvk4"]
+[ext_resource type="Texture2D" uid="uid://djrs7071168fn" path="res://Assets/UI/Characters/Class_Button_Hover.png" id="3_1uke4"]
+[ext_resource type="Texture2D" uid="uid://d1nnnwfh7dr8o" path="res://Assets/UI/Characters/Class_Button_Disabled.png" id="4_u4bhx"]
+[ext_resource type="Script" uid="uid://ddv4fyqyvq4xn" path="res://Scenes/UI/class_button.gd" id="5_1yvk4"]
+[ext_resource type="Texture2D" uid="uid://kqn3h2h07n8l" path="res://Assets/UI/Characters/Class_Gunner_Static_Anim.png" id="5_om2gj"]
+[ext_resource type="Texture2D" uid="uid://e43g2jhgoemh" path="res://Assets/UI/Characters/Coming_Soon.png" id="6_5x4n7"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_80bdo"]
+atlas = ExtResource("5_om2gj")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_4aw74"]
+atlas = ExtResource("5_om2gj")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d1dew"]
+atlas = ExtResource("5_om2gj")
+region = Rect2(64, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_iog7n"]
+atlas = ExtResource("5_om2gj")
+region = Rect2(96, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_a6but"]
+atlas = ExtResource("5_om2gj")
+region = Rect2(128, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_kxtg1"]
+atlas = ExtResource("5_om2gj")
+region = Rect2(160, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_yjpj7"]
+atlas = ExtResource("6_5x4n7")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_hqxv8"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_80bdo")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_4aw74")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d1dew")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_iog7n")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_a6but")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_kxtg1")
+}],
+"loop": 1,
+"name": &"class_gunner",
+"speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_yjpj7")
+}],
+"loop": 0,
+"name": &"coming_soon",
+"speed": 5.0
+}]
+
+[node name="GunnerClassButton" type="TextureButton" unique_id=2041608098]
+toggle_mode = true
+texture_normal = ExtResource("1_aocjr")
+texture_pressed = ExtResource("2_1yvk4")
+texture_hover = ExtResource("3_1uke4")
+texture_disabled = ExtResource("4_u4bhx")
+script = ExtResource("5_1yvk4")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=68822985]
+position = Vector2(16, 7)
+sprite_frames = SubResource("SpriteFrames_hqxv8")
+animation = &"class_gunner"
+autoplay = "class_gunner"
+frame_progress = 0.69109315

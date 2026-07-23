@@ -23,6 +23,7 @@ config/icon="res://icon.svg"
 
 Global="*res://Singletons/global.gd"
 NetworkManager="*uid://nvnceh3131m8"
+MissionManager="*uid://mwppjxduc700"
 
 [display]
 

@@ -148,6 +148,8 @@ var dying: bool = false
 var death_pending: bool = false
 var death_animation_finished: bool = false
 
+var void_respawn_active: bool = false
+
 var hit_reaction_active: bool = false
 var hit_reaction_time_remaining: float = 0.0
 
@@ -967,9 +969,11 @@ func player_died(
 	control_timer.stop()
 	
 	disable_camera_smoothing()
-	
+
 	local_player_died.emit()
-	
+
+	MissionManager.report_local_player_died()
+
 	## The Hurtbox emits its knockback signal after the
 	## HealthComponent finishes processing the fatal damage.
 	## Deferring this function allows that knockback signal
@@ -1248,6 +1252,69 @@ func apply_bounce() -> void:
 
 
 ############################
+##      VOID RESPAWN      ##
+############################
+
+#### RESPAWN FROM VOID ####
+
+func respawn_from_void() -> void:
+	if void_respawn_active:
+		return
+	
+	if not is_multiplayer_authority():
+		request_void_respawn.rpc_id(peer_id)
+		return
+	
+	perform_void_respawn()
+
+
+#### REQUEST VOID RESPAWN ####
+
+@rpc("any_peer", "call_local", "reliable")
+func request_void_respawn() -> void:
+	if not is_multiplayer_authority():
+		return
+	
+	var sender_peer_id: int = (
+		multiplayer.get_remote_sender_id()
+	)
+	
+	if sender_peer_id != 0 and sender_peer_id != 1:
+		return
+	
+	perform_void_respawn()
+
+
+#### PERFORM VOID RESPAWN ####
+
+func perform_void_respawn() -> void:
+	if not is_local_player():
+		return
+	
+	if void_respawn_active:
+		return
+	
+	if dead or dying or death_pending:
+		return
+	
+	void_respawn_active = true
+	
+	MissionManager.report_local_player_died()
+	
+	perform_respawn()
+	
+	call_deferred(
+		"finish_void_respawn"
+	)
+
+
+#### FINISH VOID RESPAWN ####
+
+func finish_void_respawn() -> void:
+	void_respawn_active = false
+
+
+############################
 ##        RESPAWN         ##
 ############################
 
@@ -1292,7 +1359,9 @@ func perform_respawn() -> void:
 	broadcast_respawn_state(
 		respawn_position
 	)
-	
+
+	MissionManager.report_local_player_respawned()
+
 	spawn_in()
 
 

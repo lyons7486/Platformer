@@ -1,0 +1,76 @@
+[gd_scene format=3 uid="uid://bavgqk3pavked"]
+
+[ext_resource type="Script" uid="uid://6equb4ahx1b2" path="res://Scenes/UI/multiplayer_lobby.gd" id="1_1uojl"]
+[ext_resource type="PackedScene" uid="uid://dp6rjhlggcbyu" path="res://Scenes/UI/lobby_player.tscn" id="2_58y7p"]
+[ext_resource type="Texture2D" uid="uid://c4j83hdf25cbv" path="res://Assets/UI/MenuBox_DottedLine.png" id="3_8xcwv"]
+
+[node name="MultiplayerLobby" type="Control" unique_id=1464312955]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_1uojl")
+
+[node name="TextureRect" type="ColorRect" parent="." unique_id=1757213517]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.119274236, 0.12872627, 0.17413178, 1)
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=1697012084]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="CenterContainer" type="CenterContainer" parent="MarginContainer" unique_id=1415449528]
+layout_mode = 2
+
+[node name="LobbyPlayerBox" type="HBoxContainer" parent="MarginContainer/CenterContainer" unique_id=135132580]
+layout_mode = 2
+
+[node name="LobbyPlayer" parent="MarginContainer/CenterContainer/LobbyPlayerBox" unique_id=1172678235 instance=ExtResource("2_58y7p")]
+layout_mode = 2
+
+[node name="LobbyPlayer2" parent="MarginContainer/CenterContainer/LobbyPlayerBox" unique_id=1889922916 instance=ExtResource("2_58y7p")]
+layout_mode = 2
+
+[node name="LobbyPlayer3" parent="MarginContainer/CenterContainer/LobbyPlayerBox" unique_id=1065072100 instance=ExtResource("2_58y7p")]
+layout_mode = 2
+
+[node name="LobbyPlayer4" parent="MarginContainer/CenterContainer/LobbyPlayerBox" unique_id=1772126255 instance=ExtResource("2_58y7p")]
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer/CenterContainer/LobbyPlayerBox" unique_id=1128416052]
+layout_mode = 2
+
+[node name="NinePatchRect" type="NinePatchRect" parent="MarginContainer/CenterContainer/LobbyPlayerBox/MarginContainer" unique_id=1665072759]
+custom_minimum_size = Vector2(71, 202)
+layout_mode = 2
+texture = ExtResource("3_8xcwv")
+patch_margin_left = 5
+patch_margin_top = 5
+patch_margin_right = 5
+patch_margin_bottom = 5
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[node name="CenterContainer" type="CenterContainer" parent="MarginContainer/CenterContainer/LobbyPlayerBox/MarginContainer" unique_id=1478479189]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MarginContainer/CenterContainer/LobbyPlayerBox/MarginContainer/CenterContainer" unique_id=1325977567]
+layout_mode = 2
+text = "INVITE PLAYER
+
+-or-
+
+WAIING FOR
+PLAYERS"
+horizontal_alignment = 1
