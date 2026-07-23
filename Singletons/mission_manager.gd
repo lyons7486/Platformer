@@ -53,6 +53,8 @@ signal team_waypoint_secured(
 ############################
 
 var reconnect_grace_duration: float = 30.0
+var disconnect_update_interval: float = 0.25
+
 var print_roster_changes: bool = false
 
 
@@ -77,6 +79,15 @@ var snapshot_publish_queued: bool = false
 var player_records: Dictionary = {}
 var peer_to_player_key: Dictionary = {}
 
+var disconnect_grace_player_keys: Dictionary = {}
+
+
+############################
+##      TIMER STATE       ##
+############################
+
+var disconnect_grace_timer: Timer = null
+
 
 ############################
 ##       LIFECYCLE        ##
@@ -85,19 +96,82 @@ var peer_to_player_key: Dictionary = {}
 #### READY ####
 
 func _ready() -> void:
+	setup_disconnect_grace_timer()
 	connect_network_signals()
 
 
-#### PROCESS ####
+############################
+##      TIMER SETUP       ##
+############################
 
-func _process(delta: float) -> void:
-	if not mission_active:
-		return
+#### SETUP DISCONNECT GRACE TIMER ####
+
+func setup_disconnect_grace_timer() -> void:
+	disconnect_grace_timer = Timer.new()
 	
+	disconnect_grace_timer.name = (
+		"DisconnectGraceTimer"
+	)
+	
+	disconnect_grace_timer.wait_time = (
+		disconnect_update_interval
+	)
+	
+	disconnect_grace_timer.one_shot = false
+	disconnect_grace_timer.autostart = false
+	disconnect_grace_timer.ignore_time_scale = true
+	
+	disconnect_grace_timer.process_mode = (
+		Node.PROCESS_MODE_ALWAYS
+	)
+	
+	add_child(
+		disconnect_grace_timer
+	)
+	
+	disconnect_grace_timer.timeout.connect(
+		disconnect_grace_timer_timeout
+	)
+
+
+#### DISCONNECT GRACE TIMER TIMEOUT ####
+
+func disconnect_grace_timer_timeout() -> void:
 	if not multiplayer.is_server():
+		stop_disconnect_grace_timer()
 		return
 	
-	update_disconnect_grace_periods(delta)
+	if not mission_active:
+		stop_disconnect_grace_timer()
+		return
+	
+	update_disconnect_grace_periods(
+		disconnect_update_interval
+	)
+
+
+#### START DISCONNECT GRACE TIMER ####
+
+func start_disconnect_grace_timer() -> void:
+	if disconnect_grace_timer == null:
+		return
+	
+	if disconnect_grace_player_keys.is_empty():
+		return
+	
+	if not disconnect_grace_timer.is_stopped():
+		return
+	
+	disconnect_grace_timer.start()
+
+
+#### STOP DISCONNECT GRACE TIMER ####
+
+func stop_disconnect_grace_timer() -> void:
+	if disconnect_grace_timer == null:
+		return
+	
+	disconnect_grace_timer.stop()
 
 
 ############################
@@ -247,6 +321,9 @@ func clear_local_mission_state() -> void:
 	player_records.clear()
 	peer_to_player_key.clear()
 	
+	disconnect_grace_player_keys.clear()
+	stop_disconnect_grace_timer()
+	
 	roster_changed.emit()
 
 
@@ -284,6 +361,13 @@ func register_or_reconnect_player(
 			peer_to_player_key.erase(old_peer_id)
 		
 		existing_record.reconnect(peer_id)
+
+		disconnect_grace_player_keys.erase(
+			player_key
+		)
+
+		if disconnect_grace_player_keys.is_empty():
+			stop_disconnect_grace_timer()
 		
 		if not display_name.is_empty():
 			existing_record.display_name = (
@@ -578,10 +662,15 @@ func mark_player_disconnected(
 		reconnect_grace_duration
 	)
 	
+	disconnect_grace_player_keys[
+		record.player_key
+	] = true
+	
 	disconnect_grace_started.emit(
 		record.player_key
 	)
 	
+	start_disconnect_grace_timer()
 	publish_roster_change()
 
 
@@ -590,14 +679,30 @@ func mark_player_disconnected(
 func update_disconnect_grace_periods(
 	delta: float
 ) -> void:
+	if disconnect_grace_player_keys.is_empty():
+		stop_disconnect_grace_timer()
+		return
+	
 	var roster_was_changed: bool = false
 	
-	for record_value: Variant in player_records.values():
+	var finished_player_keys: Array[String] = []
+	
+	for player_key_value: Variant in (
+		disconnect_grace_player_keys.keys()
+	):
+		var player_key: String = str(
+			player_key_value
+		)
+		
 		var record: MissionPlayerRecord = (
-			record_value as MissionPlayerRecord
+			get_player_record(player_key)
 		)
 		
 		if record == null:
+			finished_player_keys.append(
+				player_key
+			)
+			
 			continue
 		
 		if not record.update_disconnect_grace(delta):
@@ -607,7 +712,19 @@ func update_disconnect_grace_periods(
 			record.player_key
 		)
 		
+		finished_player_keys.append(
+			player_key
+		)
+		
 		roster_was_changed = true
+	
+	for player_key: String in finished_player_keys:
+		disconnect_grace_player_keys.erase(
+			player_key
+		)
+	
+	if disconnect_grace_player_keys.is_empty():
+		stop_disconnect_grace_timer()
 	
 	if not roster_was_changed:
 		return
