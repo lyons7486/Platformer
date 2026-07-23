@@ -859,6 +859,8 @@ The ship arrival should mark the transition from the tutorial into the main game
 15. Add story and crew events aboard the ship
 
 TO DO:
+-Enemy spawn animation
+-Player spawn animation / sequence [walk out of airlock or out of drop shit]
 -Clean reusable enemy-state structure
 -Second ground enemy - jumps up and drops manageable ledges
 -Flying enemy
