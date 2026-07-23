@@ -19,6 +19,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 theme_override_constants/margin_left = 2
 theme_override_constants/margin_top = 2
 theme_override_constants/margin_right = 2
@@ -28,6 +29,7 @@ theme_override_constants/margin_bottom = 2
 layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 0
+mouse_filter = 2
 
 [node name="Ping" type="Label" parent="Margin/VBox" unique_id=272973003]
 layout_mode = 2

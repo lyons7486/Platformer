@@ -27,17 +27,20 @@ const RIFLE_PROJECTILE_SCENE: PackedScene = preload(
 	"res://Scenes/Entities/Projectile/projectile.tscn"
 )
 
+
 ############################
 ##      LEVEL STATE       ##
 ############################
 
 var current_level_path: String = ""
 
+
 ############################
 ##   DEFEATED ENEMIES     ##
 ############################
 
 var defeated_enemy_states: Dictionary = {}
+
 
 ############################
 ##     CHECKPOINT STATE   ##
@@ -341,9 +344,9 @@ func load_level_local(level_path: String) -> void:
 	
 	level_container.add_child(level)
 	current_level_path = level_path
-
+	
 	load_player_status()
-
+	
 	if multiplayer.is_server():
 		spawn_connected_players()
 
@@ -368,6 +371,7 @@ func load_player_status() -> void:
 	ui_container.add_child(
 		player_status
 	)
+
 
 ############################
 ##   DEFEATED ENEMIES     ##
@@ -490,9 +494,14 @@ func create_player_from_data(data: Variant) -> Node:
 	var player_data: Dictionary = data
 	
 	var peer_id: int = player_data["peer_id"]
-	var spawn_position: Vector2 = player_data["spawn_position"]
 	
-	var player: PlatformPlayer = PLAYER_SCENE.instantiate()
+	var spawn_position: Vector2 = (
+		player_data["spawn_position"]
+	)
+	
+	var player: PlatformPlayer = (
+		PLAYER_SCENE.instantiate()
+	)
 	
 	player.setup_player(
 		peer_id,
@@ -508,7 +517,9 @@ func spawn_connected_players() -> void:
 	if not multiplayer.is_server():
 		return
 	
-	spawn_player(multiplayer.get_unique_id())
+	spawn_player(
+		multiplayer.get_unique_id()
+	)
 	
 	for peer_id: int in multiplayer.get_peers():
 		spawn_player(peer_id)
@@ -528,7 +539,16 @@ func spawn_player(peer_id: int) -> void:
 	if level == null:
 		return
 	
-	var spawn_position: Vector2 = get_next_spawn_position(level)
+	var default_spawn_position: Vector2 = (
+		get_next_spawn_position(level)
+	)
+	
+	var spawn_position: Vector2 = (
+		MissionManager.get_late_join_spawn_position(
+			peer_id,
+			default_spawn_position
+		)
+	)
 	
 	var spawn_data: Dictionary = {
 		"peer_id": peer_id,
@@ -540,16 +560,21 @@ func spawn_player(peer_id: int) -> void:
 
 #### SPAWN POSITION ####
 
-func get_next_spawn_position(level: Level) -> Vector2:
+func get_next_spawn_position(
+	level: Level
+) -> Vector2:
 	if shared_waypoint_active:
 		return get_checkpoint_spawn_position()
 	
-	var player_index: int = players_container.get_child_count()
+	var player_index: int = (
+		players_container.get_child_count()
+	)
 	
 	return level.get_spawn_position() + Vector2(
 		player_index * level.player_spawn_spacing,
 		0.0
 	)
+
 
 #### CHECKPOINT SPAWN POSITION ####
 
@@ -563,6 +588,7 @@ func get_checkpoint_spawn_position() -> Vector2:
 		horizontal_offset,
 		0.0
 	)
+
 
 #### PLAYER LOOKUP ####
 
@@ -600,7 +626,9 @@ func remove_player(peer_id: int) -> void:
 #### PROJECTILE SPAWNER SETUP ####
 
 func setup_projectile_spawner() -> void:
-	projectile_spawner.spawn_function = create_projectile_from_data
+	projectile_spawner.spawn_function = (
+		create_projectile_from_data
+	)
 
 
 #### PROJECTILE CREATION ####
@@ -727,7 +755,9 @@ func set_shared_waypoint(
 	shared_waypoint_position = waypoint_position
 	shared_waypoint_active = true
 	
-	apply_shared_waypoint.rpc(waypoint_position)
+	apply_shared_waypoint.rpc(
+		waypoint_position
+	)
 
 
 #### APPLY SHARED WAYPOINT ####

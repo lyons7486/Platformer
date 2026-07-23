@@ -68,8 +68,9 @@ var current_mission_id: StringName = &""
 var roster_revision: int = 0
 var highest_team_secured_waypoint_id: int = 0
 
-var snapshot_publish_queued: bool = false
+var waypoint_positions: Dictionary = {}
 
+var snapshot_publish_queued: bool = false
 
 
 ############################
@@ -316,6 +317,8 @@ func clear_local_mission_state() -> void:
 	roster_revision = 0
 	highest_team_secured_waypoint_id = 0
 	
+	waypoint_positions.clear()
+	
 	snapshot_publish_queued = false
 	
 	player_records.clear()
@@ -361,11 +364,11 @@ func register_or_reconnect_player(
 			peer_to_player_key.erase(old_peer_id)
 		
 		existing_record.reconnect(peer_id)
-
+		
 		disconnect_grace_player_keys.erase(
 			player_key
 		)
-
+		
 		if disconnect_grace_player_keys.is_empty():
 			stop_disconnect_grace_timer()
 		
@@ -401,6 +404,22 @@ func register_or_reconnect_player(
 	)
 	
 	new_record.display_name = display_name
+	
+	if (
+		new_record.late_joiner
+		and highest_team_secured_waypoint_id > 0
+	):
+		var entry_position: Vector2 = (
+			get_waypoint_position(
+				highest_team_secured_waypoint_id,
+				Vector2.ZERO
+			)
+		)
+		
+		new_record.set_late_join_entry(
+			highest_team_secured_waypoint_id,
+			entry_position
+		)
 	
 	player_records[player_key] = new_record
 	peer_to_player_key[peer_id] = player_key
@@ -766,8 +785,19 @@ func mark_player_waypoint_by_peer(
 	if record.extracted:
 		return
 	
+	if (
+		record.late_joiner
+		and waypoint_id
+		<= record.progression_entry_waypoint_id
+	):
+		return
+	
 	if waypoint_id <= record.highest_waypoint_id:
 		return
+	
+	waypoint_positions[waypoint_id] = (
+		waypoint_position
+	)
 	
 	record.current_waypoint_id = waypoint_id
 	record.highest_waypoint_id = waypoint_id
@@ -814,7 +844,7 @@ func reevaluate_team_waypoint_progress() -> void:
 		
 		highest_reached_waypoint_id = maxi(
 			highest_reached_waypoint_id,
-			record.highest_waypoint_id
+			record.get_progression_waypoint_id()
 		)
 	
 	if (
@@ -864,7 +894,10 @@ func try_secure_team_waypoint(
 		return
 	
 	for record: MissionPlayerRecord in required_records:
-		if record.highest_waypoint_id >= waypoint_id:
+		if (
+			record.get_progression_waypoint_id()
+			>= waypoint_id
+		):
 			continue
 		
 		return
@@ -909,6 +942,63 @@ func is_team_waypoint_secured(
 		highest_team_secured_waypoint_id
 		>= waypoint_id
 	)
+
+
+#### GET WAYPOINT POSITION ####
+
+func get_waypoint_position(
+	waypoint_id: int,
+	fallback_position: Vector2 = Vector2.ZERO
+) -> Vector2:
+	var stored_position: Variant = (
+		waypoint_positions.get(
+			waypoint_id,
+			fallback_position
+		)
+	)
+	
+	if stored_position is Vector2:
+		return stored_position
+	
+	return fallback_position
+
+
+#### GET CURRENT TEAM SPAWN POSITION ####
+
+func get_current_team_spawn_position(
+	fallback_position: Vector2
+) -> Vector2:
+	if highest_team_secured_waypoint_id <= 0:
+		return fallback_position
+	
+	return get_waypoint_position(
+		highest_team_secured_waypoint_id,
+		fallback_position
+	)
+
+
+#### GET LATE JOIN SPAWN POSITION ####
+
+func get_late_join_spawn_position(
+	peer_id: int,
+	fallback_position: Vector2
+) -> Vector2:
+	if not mission_active:
+		return fallback_position
+	
+	var record: MissionPlayerRecord = (
+		get_player_record_by_peer(peer_id)
+	)
+	
+	if record == null:
+		return get_current_team_spawn_position(
+			fallback_position
+		)
+	
+	if not record.can_receive_late_join_spawn():
+		return fallback_position
+	
+	return record.progression_entry_position
 
 
 ############################
@@ -1032,6 +1122,9 @@ func create_mission_snapshot() -> Dictionary:
 		"highest_team_secured_waypoint_id": (
 			highest_team_secured_waypoint_id
 		),
+		"waypoint_positions": (
+			waypoint_positions.duplicate(true)
+		),
 		"player_records": serialized_records
 	}
 
@@ -1066,6 +1159,29 @@ func receive_mission_snapshot(
 			0
 		)
 	)
+	
+	waypoint_positions.clear()
+	
+	var loaded_waypoint_positions: Variant = (
+		snapshot.get("waypoint_positions", {})
+	)
+	
+	if loaded_waypoint_positions is Dictionary:
+		for waypoint_key: Variant in (
+			loaded_waypoint_positions.keys()
+		):
+			var loaded_position: Variant = (
+				loaded_waypoint_positions[
+					waypoint_key
+				]
+			)
+			
+			if not loaded_position is Vector2:
+				continue
+			
+			waypoint_positions[int(waypoint_key)] = (
+				loaded_position
+			)
 	
 	player_records.clear()
 	peer_to_player_key.clear()
@@ -1201,8 +1317,14 @@ func print_roster_summary() -> void:
 			record.connected,
 			" | Started mission: ",
 			record.began_mission,
+			" | Late joiner: ",
+			record.late_joiner,
 			" | Deaths: ",
 			record.death_count,
-			" | Waypoint: ",
-			record.highest_waypoint_id
+			" | Personal waypoint: ",
+			record.highest_waypoint_id,
+			" | Progression entry: ",
+			record.progression_entry_waypoint_id,
+			" | Missed waypoints: ",
+			record.missed_waypoint_count
 		)

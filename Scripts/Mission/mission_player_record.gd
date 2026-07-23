@@ -59,6 +59,11 @@ var highest_waypoint_id: int = 0
 
 var current_waypoint_position: Vector2 = Vector2.ZERO
 
+var progression_entry_waypoint_id: int = 0
+var progression_entry_position: Vector2 = Vector2.ZERO
+
+var missed_waypoint_count: int = 0
+
 
 ############################
 ##      STATISTICS        ##
@@ -185,6 +190,49 @@ func leave_extraction_zone() -> void:
 
 func mark_extracted() -> void:
 	set_state(PlayerState.EXTRACTED)
+
+
+############################
+##   WAYPOINT PROGRESSION ##
+############################
+
+#### SET LATE JOIN ENTRY ####
+
+func set_late_join_entry(
+	waypoint_id: int,
+	waypoint_position: Vector2
+) -> void:
+	progression_entry_waypoint_id = maxi(
+		waypoint_id,
+		0
+	)
+	
+	progression_entry_position = (
+		waypoint_position
+	)
+	
+	missed_waypoint_count = maxi(
+		missed_waypoint_count,
+		progression_entry_waypoint_id
+	)
+
+
+#### GET PROGRESSION WAYPOINT ID ####
+
+func get_progression_waypoint_id() -> int:
+	return maxi(
+		highest_waypoint_id,
+		progression_entry_waypoint_id
+	)
+
+
+#### CAN RECEIVE LATE JOIN SPAWN ####
+
+func can_receive_late_join_spawn() -> bool:
+	if not late_joiner:
+		return false
+	
+	return progression_entry_waypoint_id > 0
 
 
 ############################
@@ -325,6 +373,13 @@ func to_dictionary() -> Dictionary:
 		"current_waypoint_id": current_waypoint_id,
 		"highest_waypoint_id": highest_waypoint_id,
 		"current_waypoint_position": current_waypoint_position,
+		"progression_entry_waypoint_id": (
+			progression_entry_waypoint_id
+		),
+		"progression_entry_position": (
+			progression_entry_position
+		),
+		"missed_waypoint_count": missed_waypoint_count,
 		"statistics": statistics.duplicate(true)
 	}
 
@@ -423,6 +478,25 @@ func apply_dictionary(
 	current_waypoint_position = data.get(
 		"current_waypoint_position",
 		Vector2.ZERO
+	)
+	
+	progression_entry_waypoint_id = int(
+		data.get(
+			"progression_entry_waypoint_id",
+			0
+		)
+	)
+	
+	progression_entry_position = data.get(
+		"progression_entry_position",
+		Vector2.ZERO
+	)
+	
+	missed_waypoint_count = int(
+		data.get(
+			"missed_waypoint_count",
+			0
+		)
 	)
 	
 	var loaded_statistics: Variant = (
