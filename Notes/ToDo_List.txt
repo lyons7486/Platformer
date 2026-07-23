@@ -1,33 +1,870 @@
 
 ROAD MAP:
 
-Phase 3B
-Enemy hit/death feedback and persistent corpses
-Completed
+# Multiplayer Mission Progression Roadmap
 
-Phase 3C
-Walker attack state and frame-based bite hitbox
-Next
+## Phase 1 — Mission Roster and Player States
 
-Phase 3D
-Clean reusable enemy-state structure
+Create a server-authoritative mission roster when the level begins.
 
-Phase 4
-Second ground enemy:
-jumps up and drops manageable ledges
+Track two separate rosters:
 
-Phase 5
-Flying enemy
+### Mission Roster
 
-Phase 6
-Stationary projectile enemy
+Records everyone who began or meaningfully participated in the mission.
 
+Used for:
+
+* Final survival percentage
+* Personal rewards
+* Death penalties
+* Reconnect restoration
+* End-of-level statistics
+
+### Active Roster
+
+Tracks players currently affecting level progression.
+
+Used for:
+
+* Waypoint requirements
+* Extraction requirements
+* Living-player checks
+* Disconnect grace periods
+
+Each player can have one mission state:
+
+* Active
+* Dead
+* Waiting for waypoint respawn
+* In extraction zone
+* Extracted
+* Disconnected during grace period
+* Disconnected and inactive
+* Reconnected
+
+Store each player’s:
+
+* Peer ID
+* Persistent player identity
+* Starting-roster status
+* Alive or dead status
+* Current personal waypoint
+* Highest waypoint reached
+* Extraction-zone status
+* Extracted status
+* Disconnect status
+* Reconnect timer
+* Death count
+* Personal performance statistics
+
+---
+
+## Phase 2 — Individual Waypoint Progress
+
+Each player records waypoint progress independently.
+
+Example:
+
+Player 1: Waypoint 4
+Player 2: Waypoint 4
+Player 3: Waypoint 3
+Player 4: Dead
+
+A player reaching a waypoint does not automatically advance the rest of the team.
+
+A waypoint becomes secured when every currently living, connected, non-extracted player has reached it.
+
+Extracted players do not block waypoint progression.
+
+Dead players do not block waypoint progression.
+
+Disconnected players continue blocking progression during their reconnect grace period.
+
+After the grace period expires, they no longer block waypoint progression.
+
+---
+
+## Phase 3 — Secured Waypoint Events
+
+When all required living players reach a waypoint:
+
+* Mark the waypoint as secured
+* Lock earlier sections of the level
+* Open the next section
+* Prevent unnecessary backtracking
+* Update each eligible player’s respawn location
+* Spawn waypoint rewards
+* Allow dead players to be restored
+* Save the team’s progress through the mission
+
+Possible waypoint rewards:
+
+* Health supplies
+* Ammunition
+* Armor
+* Temporary team buffs
+* Currency
+* Bonus reward points
+* Player respawns
+
+---
+
+## Phase 4 — Waypoint Reward Budget
+
+Each secured waypoint grants a limited reward budget.
+
+Example:
+
+Waypoint reward budget: 4 points
+
+Possible costs:
+
+* Respawn one player: 2 points
+* Health supply crate: 1 point
+* Ammo supply crate: 1 point
+* Armor supply: 1 point
+* Temporary team buff: 2 points
+* Save unused points for final rewards
+
+More player deaths mean more waypoint rewards must be spent on respawns.
+
+This creates a natural death penalty without permanently removing players from long missions.
+
+Unused waypoint reward points can contribute to the final mission bonus.
+
+---
+
+## Phase 5 — Player Death and Spectating
+
+When a player dies:
+
+* Mark them as dead
+* Disable their combat and movement controls
+* Switch them into spectator mode
+* Allow them to cycle through living teammates
+* Remove them from current waypoint requirements
+* Record their death for final scoring
+* Wait until the next team-secured waypoint
+
+Dead players do not automatically respawn.
+
+When the next waypoint is secured, the team may trade part of its waypoint reward for a respawn.
+
+A revived player:
+
+* Respawns at the newly secured waypoint
+* Returns with partial health
+* Returns with limited ammunition
+* Receives short spawn protection
+* Loses temporary buffs
+* Becomes part of future waypoint and extraction requirements again
+
+---
+
+## Phase 6 — Extraction Zone
+
+Players reach the extraction zone independently.
+
+Entering the zone does not automatically extract them.
+
+A player inside the extraction zone is considered extraction-ready.
+
+While extraction-ready, the player:
+
+* Remains physically present in the level
+* Can continue helping teammates
+* Can leave the extraction zone
+* Can still take damage
+* Can still die
+* Has not locked in their survival reward
+* Can provide limited support from the safer area
+
+The extraction zone should be safer than the rest of the level, but not completely safe.
+
+Possible extraction-zone support:
+
+* Covering approaching teammates
+* Limited healing or resupply
+* Defensive weapon stations
+* Enemy marking
+* Opening or closing nearby defenses
+* Monitoring cameras or sensors
+* Limited long-range support
+
+---
+
+## Phase 7 — Manual Extraction
+
+A player must press the interaction button to extract.
+
+Extraction should require a short uninterrupted interaction rather than happening instantly.
+
+Once extracted:
+
+* The character’s survival is locked in
+* The player cannot return to the level
+* The player cannot attack
+* The player cannot heal or support teammates
+* The player becomes a spectator
+* The player counts as successfully extracted
+* The player receives the personal extraction bonus
+* The player no longer blocks waypoint or extraction requirements
+
+This creates the choice:
+
+Extract now and guarantee survival
+
+or
+
+Remain in the zone and continue helping the team at personal risk
+
+---
+
+## Phase 8 — Mission Completion Conditions
+
+A mission can only succeed when:
+
+* At least one player has manually extracted
+* Every remaining connected living player has reached and resolved the extraction objective
+
+Remaining living players must either:
+
+* Extract
+* Continue supporting until they choose to extract
+* Die before mission resolution
+
+The mission cannot complete with zero extracted players.
+
+If every player dies before anyone extracts, the mission fails.
+
+Extracted players remain locked in as survivors even if the remaining team later struggles.
+
+---
+
+## Phase 9 — Disconnect and Reconnect Handling
+
+When a player disconnects:
+
+* Keep them in the active roster temporarily
+* Start a reconnect grace period
+* Preserve their character and mission state
+* Continue counting them for waypoint and extraction requirements during the grace period
+
+This prevents players from disconnecting near the end of a level to make completion easier.
+
+If the grace period expires:
+
+* Remove them from active progression requirements
+* Keep their mission record
+* Do not allow their disconnect to improve the survival score
+* Preserve their previous death, waypoint, and extraction information
+
+If they reconnect during the mission:
+
+* Restore their mission-roster status
+* Restore their previous character state
+* Restore their health and resources where appropriate
+* Restore their personal waypoint
+* Restore whether they were dead, active, extraction-ready, or extracted
+* Add them back to active requirements when applicable
+
+Already extracted players reconnect as spectators.
+
+Dead players reconnect as spectators until the next eligible respawn.
+
+---
+
+## Phase 10 — Base Mission Rewards
+
+Every eligible participant receives a base reward when the mission succeeds.
+
+Possible base rewards:
+
+* Experience
+* Money
+* Mission points
+* Account progression
+* Character progression
+* Level unlocks
+* Equipment unlock progress
+
+Mission failure may provide reduced rewards depending on the game mode.
+
+---
+
+## Phase 11 — Team Survival Bonus
+
+The team survival bonus is based on how many mission-roster players successfully extract alive.
+
+Example:
+
+4 players participated.
+
+4 extracted alive: 100% extraction rate
+3 extracted alive: 75% extraction rate
+2 extracted alive: 50% extraction rate
+1 extracted alive: 25% extraction rate
+
+Disconnecting does not improve this percentage.
+
+A player who dies and is later revived can still extract alive, but their death remains recorded for the no-death bonus.
+
+Track both:
+
+* Final extraction rate
+* No-death completion rate
+
+---
+
+## Phase 12 — Waypoint Completion Bonus
+
+Track whether each player reached each waypoint alive before it was secured.
+
+Award a higher team bonus when more players survive through more checkpoints.
+
+Possible factors:
+
+* Percentage of waypoints reached alive
+* Number of players alive at each secured waypoint
+* Number of respawns purchased
+* Number of reward points spent
+* Number of reward points saved
+* Whether every original player reached every waypoint
+* Whether earlier areas were successfully secured
+
+---
+
+## Phase 13 — Personal Rewards and Penalties
+
+Each player receives an individual result in addition to team rewards.
+
+Possible personal bonuses:
+
+* Reached extraction zone
+* Successfully extracted
+* Completed without dying
+* Reached every waypoint alive
+* Helped secure every waypoint
+* Revived teammates
+* Healed teammates
+* Prevented damage
+* Completed objectives
+* Saved another player near death
+
+Possible personal penalties:
+
+* Deaths
+* Failure to extract
+* Excessive avoidable damage
+* Friendly-fire penalties, if friendly fire exists
+* Abandoning required objectives
+* Spending the mission disconnected beyond the grace period
+
+Personal rewards should remain smaller than the base and team rewards so the system stays cooperative.
+
+---
+
+## Phase 14 — Combat and Support Statistics
+
+Track mission statistics for every player:
+
+* Enemies defeated
+* Damage dealt
+* Boss damage dealt
+* Assists
+* Health restored
+* Armor restored
+* Damage prevented
+* Defensive damage absorbed
+* Teammates revived
+* Objectives completed
+* Waypoints reached alive
+* Deaths
+* Damage received
+* Time spent supporting the extraction zone
+* Successful extraction
+* Supplies contributed or shared
+
+Enemy defeat credit should include assists and meaningful participation rather than only final blows.
+
+Raw damage taken should not provide a positive reward.
+
+Defensive damage absorbed should count only when connected to a tank, shield, guard, or protection mechanic.
+
+“Most Damage Taken” may still appear as a humorous statistic without giving bonus rewards.
+
+---
+
+## Phase 15 — End-of-Mission Commendations
+
+Display performance commendations after the mission.
+
+Possible commendations:
+
+* Most Enemies Defeated
+* Most Damage Dealt
+* Most Health Restored
+* Most Damage Prevented
+* Most Teammates Revived
+* Most Objectives Completed
+* Most Assists
+* Least Damage Taken
+* Most Defensive Damage Absorbed
+* Extraction Guardian
+* Waypoint Vanguard
+* Flawless Survivor
+* Team Lifeline
+
+Commendations provide small bonuses or cosmetic recognition.
+
+They should not outweigh team success.
+
+---
+
+## Phase 16 — Final Reward Calculation
+
+The final reward structure will combine:
+
+Base Mission Reward
+
+plus
+
+Team Survival Bonus
+
+plus
+
+Waypoint Performance Bonus
+
+plus
+
+Personal Extraction Bonus
+
+plus
+
+Personal Performance Bonus
+
+minus
+
+Death Penalties
+
+minus
+
+Waypoint Rewards Spent on Respawns
+
+A starting balance target:
+
+* 50% base mission completion
+* 25% team survival and waypoint performance
+* 15% personal survival and extraction
+* 10% personal commendations
+
+This balance can be adjusted after playtesting.
+
+---
+
+## Phase 17 — Level Transition
+
+After mission completion:
+
+* Lock all remaining player controls
+* Finalize mission statistics
+* Calculate rewards
+* Display the mission-results screen
+* Save player and account progression
+* Clear mission-specific roster data
+* Reset waypoint state
+* Reset extraction state
+* Load the next level
+* Spawn players at their appropriate starting locations
+* Fade everyone back into gameplay
+
+---
+
+# Implementation Order
+
+1. Create the server-authoritative mission roster
+2. Define player mission states
+3. Convert waypoints to individual player progression
+4. Add team-secured waypoint detection
+5. Add earlier-area locking
+6. Add waypoint reward spawning
+7. Add death spectator mode
+8. Add waypoint-based player respawning
+9. Create the extraction-ready zone
+10. Add manual interaction-based extraction
+11. Add mission completion conditions
+12. Add disconnect grace periods
+13. Add reconnect state restoration
+14. Track team and personal mission statistics
+15. Calculate base, survival, waypoint, and personal rewards
+16. Add commendations
+17. Add the results screen
+18. Add synchronized level transitions
+
+# Immediate Next Step
+
+Begin with the server-authoritative mission roster and player mission-state model.
+
+This foundation must exist before converting waypoints or building the extraction zone because both systems need one reliable place to determine:
+
+* Who started the mission
+* Who is currently connected
+* Who is alive
+* Who is dead
+* Who blocks waypoint progression
+* Who blocks extraction completion
+* Who has extracted
+* Who is inside a reconnect grace period
+* Who qualifies for rewards
+
+--
+
+# Phase 18 — Tutorial Mission and Ship Headquarters
+
+## Tutorial Mission: Base Under Attack
+
+The first playable map will act as both the tutorial and the opening story mission.
+
+The player begins inside a base that is under attack.
+
+The tutorial should introduce mechanics naturally while the player attempts to escape.
+
+Tutorial objectives may include:
+
+* Basic movement
+* Jumping and platforming
+* Aiming and firing
+* Reloading
+* Weapon switching
+* Taking damage and healing
+* Reviving or assisting teammates
+* Enemy combat
+* Individual waypoint progression
+* Team-secured waypoints
+* Using supplies
+* Interacting with doors, terminals, and objectives
+* Entering the extraction zone
+* Choosing whether to remain and support teammates
+* Manually extracting
+
+The base attack should escalate as the players progress.
+
+Possible events:
+
+* Emergency alarms
+* Damaged lighting
+* Locked or malfunctioning doors
+* Enemy breaches
+* Injured personnel
+* Failing defenses
+* Environmental hazards
+* Optional rescue objectives
+* Optional supply rooms
+* A final defensive encounter near extraction
+
+The mission ends when at least one player extracts and all remaining living players resolve the extraction objective.
+
+---
+
+## Tutorial Story Goal
+
+The main objective is:
+
+Learn the game systems and escape the base while it is under attack.
+
+The tutorial should feel like an actual mission rather than a separate training room.
+
+Players learn mechanics because they are necessary to survive and escape.
+
+Optional tutorial performance can affect the initial rewards brought onto the ship.
+
+Examples:
+
+* Personnel rescued
+* Supplies recovered
+* Enemies defeated
+* Optional areas secured
+* All teammates extracted
+* No player deaths
+* Waypoint rewards preserved
+* Special equipment recovered
+
+---
+
+## Ship Arrival
+
+After escaping the tutorial base, the players arrive aboard a ship.
+
+The ship becomes the team’s permanent:
+
+* Home
+* Headquarters
+* Mission hub
+* Upgrade area
+* Equipment area
+* Social space
+* Story progression center
+
+Future missions and levels will be launched from the ship.
+
+After completing a mission, surviving players return to the ship.
+
+Dead or failed characters return according to the game’s progression and respawn rules.
+
+---
+
+## Mission Loop
+
+The primary game loop becomes:
+
+Ship Headquarters
+
+→ Prepare characters and equipment
+
+→ Select a mission
+
+→ Launch into the mission
+
+→ Progress through individual and team waypoints
+
+→ Complete objectives
+
+→ Reach the extraction zone
+
+→ Extract surviving players
+
+→ Calculate mission rewards and statistics
+
+→ Return to the ship
+
+→ Purchase or unlock upgrades
+
+→ Prepare for the next mission
+
+---
+
+## Ship Mission Selection
+
+Future missions can be initiated from a central command area.
+
+Possible mission-selection systems:
+
+* Navigation console
+* Mission table
+* Holographic map
+* Communications terminal
+* Captain’s bridge
+* Operations room
+
+The mission interface may display:
+
+* Mission name
+* Location
+* Primary objectives
+* Optional objectives
+* Enemy types
+* Environmental hazards
+* Recommended equipment
+* Possible rewards
+* Difficulty
+* Survival modifiers
+* Team size recommendations
+* Previously completed performance
+
+Only the server or host should confirm mission selection and launch.
+
+Other players may vote, mark themselves ready, or suggest missions.
+
+---
+
+## Player Upgrade Area
+
+Players purchase or obtain upgrades aboard the ship using points and resources earned from missions.
+
+Possible upgrade resources:
+
+* Experience
+* Money
+* Mission points
+* Upgrade points
+* Salvage
+* Research materials
+* Rare mission rewards
+* Character-specific resources
+
+Possible upgrade categories:
+
+* Maximum health
+* Movement abilities
+* Weapon handling
+* Reload speed
+* Ammunition capacity
+* Damage
+* Armor
+* Healing effectiveness
+* Support abilities
+* Class abilities
+* Revive abilities
+* Extraction support abilities
+* Passive bonuses
+
+Upgrades may be:
+
+* Purchased
+* Unlocked through progression
+* Found during missions
+* Earned from optional objectives
+* Awarded through commendations
+* Crafted from recovered materials
+
+---
+
+## Equipment and Loadout Area
+
+The ship should include an area where players prepare before missions.
+
+Possible functions:
+
+* Select character or class
+* Select weapons
+* Equip armor
+* Equip support items
+* Assign consumables
+* View weapon statistics
+* Upgrade equipment
+* Test equipment
+* Save loadouts
+* Compare upgrades
+
+A firing range or training room could allow players to test new weapons and abilities before launching.
+
+---
+
+## Ship Expansion
+
+The headquarters can grow as the team progresses.
+
+Possible ship areas:
+
+* Bridge
+* Mission operations room
+* Armory
+* Medical bay
+* Engineering
+* Research laboratory
+* Crew quarters
+* Training room
+* Firing range
+* Cargo and salvage storage
+* Hangar
+* Communications room
+* Trophy or commendation area
+
+Mission rewards and story progress may unlock or improve these areas.
+
+Examples:
+
+* Upgraded medical bay improves respawn or recovery options
+* Upgraded armory unlocks stronger weapons
+* Upgraded research lab unlocks new abilities
+* Upgraded engineering unlocks ship systems
+* Upgraded operations room reveals more mission information
+
+---
+
+## Persistent Ship Progression
+
+The ship provides visible long-term progression between missions.
+
+Possible persistent progression:
+
+* New rooms become accessible
+* Damaged sections are repaired
+* New crew members join
+* Vendors become available
+* Mission contacts appear
+* Decorations and trophies are displayed
+* Recovered equipment appears in storage
+* Story events occur between missions
+* New mission regions unlock
+
+This allows mission success to improve both the players and their shared headquarters.
+
+---
+
+## Multiplayer Ship Behavior
+
+The ship should be a synchronized multiplayer hub.
+
+Players should be able to:
+
+* Move around independently
+* Change equipment
+* Purchase personal upgrades
+* Interact with stations
+* View mission results
+* Enter training areas
+* Mark themselves ready
+* Vote on missions
+* Inspect other players’ loadouts
+
+The host remains authoritative over:
+
+* Mission selection
+* Mission launch
+* Shared ship upgrades
+* Shared resources
+* Story progression
+* Major world-state changes
+
+Personal upgrades and equipment remain tied to each player’s persistent profile.
+
+---
+
+## Initial Ship Arrival Sequence
+
+After completing the tutorial mission:
+
+* Fade out from the extraction sequence
+* Display the tutorial results
+* Award tutorial rewards
+* Introduce the ship through a short arrival sequence
+* Spawn players in the ship
+* Introduce the mission-selection area
+* Introduce the upgrade and equipment systems
+* Allow players to explore
+* Unlock the first set of post-tutorial missions
+
+The ship arrival should mark the transition from the tutorial into the main game structure.
+
+---
+
+# Later Implementation Order
+
+1. Complete core mission roster and progression systems
+2. Complete individual waypoint and extraction systems
+3. Complete reward and results calculations
+4. Complete synchronized mission transitions
+5. Build the tutorial base-under-attack map
+6. Integrate tutorial prompts into normal gameplay
+7. Create the ship headquarters level
+8. Add return-to-ship mission flow
+9. Add mission selection and ready checks
+10. Add player upgrade purchasing
+11. Add equipment and loadout stations
+12. Add persistent personal progression
+13. Add shared ship progression
+14. Add unlockable ship rooms and services
+15. Add story and crew events aboard the ship
 
 TO DO:
-
+-Clean reusable enemy-state structure
+-Second ground enemy - jumps up and drops manageable ledges
+-Flying enemy
+-Stationary projectile enemy
 -Hitting enemies causes them to chase, they stop chasing after not sensing them after a short time. ex. sense distance is x lose track distance is x*1.5, also consider LOS if enemy hasnt seen player after set time chase is disabled.
 -enemy and player color loses saturation as they lose health, down to like maybe 20%, for visual health rep
 
 Bugs:
-bullet trail doesn work well on joining players screen, starts too long almost its max it looks like
-when reloading during aiming it needs to go back to level so the reload looks right.
+-
